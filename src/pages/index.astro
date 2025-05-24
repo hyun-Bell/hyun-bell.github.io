@@ -3,53 +3,48 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 ---
 
 <BaseLayout>
-  <main class="container">
-    <h1>Astro Notion Blog</h1>
-    <p>개발 중입니다...</p>
+  <main class="container flex min-h-screen flex-col items-center justify-center">
+    <div class="animate-in text-center">
+      <h1 class="mb-4 text-5xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl">
+        Astro Notion Blog
+      </h1>
+      <p class="mb-8 text-lg text-gray-600 dark:text-gray-400">
+        개발 관련 인사이트를 공유하는 블로그
+      </p>
 
-    <nav>
-      <ul>
-        <li><a href="/blog">블로그</a></li>
-        <li><a href="/projects">프로젝트</a></li>
-        <li><a href="/about">소개</a></li>
-      </ul>
-    </nav>
+      <nav>
+        <ul class="flex flex-wrap justify-center gap-6">
+          <li>
+            <a
+              href="/blog"
+              class="text-lg font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              블로그
+            </a>
+          </li>
+          <li>
+            <a
+              href="/projects"
+              class="text-lg font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              프로젝트
+            </a>
+          </li>
+          <li>
+            <a
+              href="/about"
+              class="text-lg font-medium text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+              소개
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="mt-12">
+        <button class="btn-primary"> 시작하기 </button>
+        <button class="btn-secondary ml-4"> 더 알아보기 </button>
+      </div>
+    </div>
   </main>
 </BaseLayout>
-
-<style>
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-
-  h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-  }
-
-  nav ul {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    gap: 2rem;
-    margin-top: 2rem;
-  }
-
-  nav a {
-    color: #3b82f6;
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  nav a:hover {
-    text-decoration: underline;
-  }
-</style>

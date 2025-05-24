@@ -10,7 +10,20 @@ export default [
 
   // 전역 ignores
   {
-    ignores: ['dist/**', '.astro/**', 'node_modules/**', '*.d.ts', 'coverage/**'],
+    ignores: [
+      'dist/**',
+      '.astro/**',
+      'node_modules/**',
+      '*.d.ts',
+      'coverage/**',
+      // Config files
+      'postcss.config.cjs',
+      'tailwind.config.mjs',
+      'astro.config.mjs',
+      '*.config.js',
+      '*.config.mjs',
+      '*.config.cjs',
+    ],
   },
 
   // 모든 파일에 대한 공통 설정
