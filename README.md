@@ -1,47 +1,39 @@
-# Astro Starter Kit: Minimal
+# Astro Notion Blog
 
-```sh
-npm create astro@latest -- --template minimal
+Astro 5+와 Notion API를 활용한 개발자 블로그
+
+## 🚀 프로젝트 개요
+
+이 프로젝트는 다음 기술을 사용합니다:
+
+- Astro 5+ (Content Layer)
+- TypeScript (Strict Mode)
+- Notion API (CMS)
+- Tailwind CSS
+- GitHub Pages (배포)
+
+## 📋 개발 진행 상황
+
+- [x] 프로젝트 초기화
+- [ ] 개발 환경 설정
+- [ ] 기본 구조 설정
+- [ ] Notion 통합
+- [ ] UI 구현
+- [ ] 배포 설정
+
+## 🛠️ 설치 및 실행
+
+```bash
+# 의존성 설치
+pnpm install
+
+# 개발 서버 실행
+pnpm dev
+
+# 빌드
+pnpm build
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/minimal)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/minimal)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/minimal/devcontainer.json)
+## 📝 라이선스
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+MIT

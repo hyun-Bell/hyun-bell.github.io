@@ -10,6 +10,7 @@ dist/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+pnpm-lock.yaml
 
 # environment variables
 .env
@@ -36,3 +37,11 @@ coverage/
 
 # Notion cache
 .astro/notion-cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.cache/
+.temp/
+.tmp/
