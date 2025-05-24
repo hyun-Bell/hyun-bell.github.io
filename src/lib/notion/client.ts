@@ -5,7 +5,7 @@
 import type { BlogPost, Project, Snippet } from '@/lib/types/notion';
 import { env } from '@/lib/utils/env';
 import { logError, NotionError, retry } from '@/lib/utils/errors';
-import { calculateReadingTime, slugify } from '@/lib/utils/strings';
+import { calculateReadingTime } from '@/lib/utils/strings';
 import { Client, isFullPage } from '@notionhq/client';
 import type {
   PageObjectResponse,
@@ -41,13 +41,7 @@ export class NotionClient {
         () =>
           this.client.databases.query({
             database_id: databaseId,
-            filter: {
-              property: 'Published',
-              checkbox: {
-                equals: true,
-              },
-            },
-            // 정렬을 임시로 제거하고 나중에 JavaScript로 정렬
+            // Published 필터 제거 - 모든 포스트를 가져온 후 JavaScript로 필터링
           }),
         {
           maxAttempts: 3,
@@ -58,6 +52,11 @@ export class NotionClient {
         },
       );
 
+      console.log('Notion API response:', {
+        resultsCount: response.results.length,
+        hasMore: response.has_more,
+      });
+
       const posts: BlogPost[] = [];
 
       for (const page of response.results) {
@@ -66,15 +65,26 @@ export class NotionClient {
         try {
           const post = await this.transformBlogPost(page as PageObjectResponse);
           posts.push(post);
+          console.log('Transformed post:', {
+            title: post.title,
+            published: post.published,
+            slug: post.slug,
+          });
         } catch (error) {
           logError(error, `transformBlogPost ${page.id}`);
         }
       }
 
-      // JavaScript로 날짜순 정렬
-      posts.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
+      // Published가 true인 포스트만 필터링
+      const publishedPosts = posts.filter((post) => post.published);
+      console.log(
+        `Filtered posts: ${publishedPosts.length} published out of ${posts.length} total`,
+      );
 
-      return posts;
+      // JavaScript로 날짜순 정렬
+      publishedPosts.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
+
+      return publishedPosts;
     } catch (error) {
       throw new NotionError('Failed to fetch blog posts', 'FETCH_POSTS_ERROR');
     }
@@ -184,9 +194,8 @@ export class NotionClient {
     // 제목 추출 - 전체 properties 객체 전달
     const title = this.getTitle(props) || 'Untitled';
 
-    // Slug 생성
-    const customSlug = this.getRichText(props.Slug || props.slug);
-    const slug = customSlug || slugify(title);
+    // ID를 slug로 사용 (하이픈 제거하여 더 깔끔하게)
+    const slug = page.id.replace(/-/g, '');
 
     // 날짜 처리 - 다양한 날짜 속성 이름 시도
     const dateValue =
