@@ -47,12 +47,7 @@ export class NotionClient {
                 equals: true,
               },
             },
-            sorts: [
-              {
-                property: 'PublishDate',
-                direction: 'descending',
-              },
-            ],
+            // 정렬을 임시로 제거하고 나중에 JavaScript로 정렬
           }),
         {
           maxAttempts: 3,
@@ -75,6 +70,9 @@ export class NotionClient {
           logError(error, `transformBlogPost ${page.id}`);
         }
       }
+
+      // JavaScript로 날짜순 정렬
+      posts.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
 
       return posts;
     } catch (error) {
@@ -183,33 +181,48 @@ export class NotionClient {
   private async transformBlogPost(page: PageObjectResponse): Promise<BlogPost> {
     const props = page.properties;
 
-    // 제목 추출
-    const title = this.getTitle(props.Title) || 'Untitled';
+    // 제목 추출 - 전체 properties 객체 전달
+    const title = this.getTitle(props) || 'Untitled';
 
     // Slug 생성
-    const customSlug = this.getRichText(props.Slug);
+    const customSlug = this.getRichText(props.Slug || props.slug);
     const slug = customSlug || slugify(title);
 
-    // 날짜 처리
-    const publishDate = this.getDate(props.PublishDate)
-      ? new Date(this.getDate(props.PublishDate)!)
-      : new Date(page.created_time);
+    // 날짜 처리 - 다양한 날짜 속성 이름 시도
+    const dateValue =
+      this.getDate(props.PublishDate) ||
+      this.getDate(props.PublishedDate) ||
+      this.getDate(props.Date) ||
+      this.getDate(props.날짜);
+
+    const publishDate = dateValue ? new Date(dateValue) : new Date(page.created_time);
 
     // 콘텐츠 가져오기
     const content = await this.getPageContent(page.id);
 
-    const authorValue = this.getRichText(props.Author) || env.PUBLIC_AUTHOR_NAME();
+    // 작성자 - 다양한 속성 이름 시도
+    const authorValue =
+      this.getRichText(props.Author) || this.getRichText(props.작성자) || env.PUBLIC_AUTHOR_NAME();
+
+    // Published 상태 - 다양한 속성 이름 시도
+    const published = this.getCheckbox(props.Published) || this.getCheckbox(props.게시) || false;
+
+    // Featured 상태
+    const featured = this.getCheckbox(props.Featured) || this.getCheckbox(props.추천) || false;
+
+    // Tags - 다양한 속성 이름 시도
+    const tags = this.getMultiSelect(props.Tags) || this.getMultiSelect(props.태그) || [];
 
     return {
       id: page.id,
       title,
-      description: this.getRichText(props.Description) || undefined,
+      description: this.getRichText(props.Description) || this.getRichText(props.설명) || undefined,
       slug,
-      published: this.getCheckbox(props.Published) || false,
+      published,
       publishDate,
       lastModified: new Date(page.last_edited_time),
-      tags: this.getMultiSelect(props.Tags) || [],
-      featured: this.getCheckbox(props.Featured) || false,
+      tags,
+      featured,
       author: authorValue || 'Anonymous',
       content,
       readingTime: calculateReadingTime(content),
@@ -222,7 +235,7 @@ export class NotionClient {
   private async transformProject(page: PageObjectResponse): Promise<Project> {
     const props = page.properties;
 
-    const name = this.getTitle(props.Name) || 'Untitled';
+    const name = this.getTitle(props) || 'Untitled';
     const content = await this.getPageContent(page.id);
 
     return {
@@ -249,7 +262,7 @@ export class NotionClient {
 
     return {
       id: page.id,
-      title: this.getTitle(props.Title) || 'Untitled',
+      title: this.getTitle(props) || 'Untitled',
       language: this.getSelect(props.Language) || undefined,
       tags: this.getMultiSelect(props.Tags) || [],
       description: this.getRichText(props.Description) || undefined,
@@ -303,12 +316,25 @@ export class NotionClient {
     });
   }
 
-  // Property 헬퍼 함수들
-  private getTitle(prop: unknown): string | null {
-    if (prop && typeof prop === 'object' && 'title' in prop) {
-      const titleProp = prop as { title: Array<{ plain_text: string }> };
-      return titleProp.title?.[0]?.plain_text || null;
+  // Property 헬퍼 함수들 - 더 유연한 속성 접근
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private getTitle(props: any): string | null {
+    // 다양한 제목 속성 이름 시도
+    const titleProps = ['Title', 'Name', '제목', 'title', 'name'];
+
+    for (const titleProp of titleProps) {
+      if (props[titleProp]?.title?.[0]?.plain_text) {
+        return props[titleProp].title[0].plain_text;
+      }
     }
+
+    // 첫 번째 title 타입 속성 찾기
+    for (const key in props) {
+      if (props[key]?.title?.[0]?.plain_text) {
+        return props[key].title[0].plain_text;
+      }
+    }
+
     return null;
   }
 
