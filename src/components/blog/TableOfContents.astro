@@ -1,0 +1,74 @@
+---
+export interface Props {
+  headings: Array<{
+    depth: number;
+    text: string;
+    slug: string;
+  }>;
+}
+
+const { headings } = Astro.props;
+
+// h2, h3만 필터링
+const toc = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 3);
+---
+
+{
+  toc.length > 0 && (
+    <nav class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-900 dark:text-white">
+        목차
+      </h2>
+      <ul class="space-y-2 text-sm">
+        {toc.map((heading) => (
+          <li class={heading.depth === 3 ? 'ml-4' : ''}>
+            <a
+              href={`#${heading.slug}`}
+              class="block py-1 text-gray-600 transition-colors hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+              data-toc-link
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<script>
+  // 현재 섹션 하이라이트
+  document.addEventListener('DOMContentLoaded', () => {
+    const tocLinks = document.querySelectorAll('[data-toc-link]');
+    const headings = document.querySelectorAll('h2[id], h3[id]');
+
+    if (tocLinks.length === 0 || headings.length === 0) return;
+
+    const observerOptions = {
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+
+          tocLinks.forEach((link) => {
+            link.classList.remove('text-primary-600', 'dark:text-primary-400', 'font-medium');
+            link.classList.add('text-gray-600', 'dark:text-gray-400');
+          });
+
+          const activeLink = document.querySelector(`[href="#${id}"]`);
+          if (activeLink) {
+            activeLink.classList.remove('text-gray-600', 'dark:text-gray-400');
+            activeLink.classList.add('text-primary-600', 'dark:text-primary-400', 'font-medium');
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    headings.forEach((heading) => observer.observe(heading));
+  });
+</script>

@@ -1,0 +1,95 @@
+---
+import Card from '@/components/ui/Card.astro';
+import { formatDate } from '@/lib/utils/strings';
+
+export interface Props {
+  post: {
+    id: string;
+    title: string;
+    description?: string | undefined;
+    slug: string;
+    published: boolean;
+    publishDate: Date | string;
+    lastModified: Date | string;
+    tags: string[];
+    featured: boolean;
+    author?: string | undefined;
+    content?: string | undefined;
+    readingTime?: number | undefined;
+  };
+  featured?: boolean;
+}
+
+const { post, featured = false } = Astro.props;
+---
+
+<Card href={`/blog/${post.slug}`} class={featured ? 'md:col-span-2' : ''} hover>
+  <article class="flex h-full flex-col">
+    {
+      featured && (
+        <span class="mb-2 inline-flex w-fit items-center rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
+          ✨ Featured
+        </span>
+      )
+    }
+
+    <h3
+      class={`font-bold text-gray-900 dark:text-white ${featured ? 'mb-3 text-2xl' : 'mb-2 text-xl'}`}
+    >
+      {post.title}
+    </h3>
+
+    {
+      post.description && (
+        <p class="mb-4 line-clamp-2 flex-grow text-gray-600 dark:text-gray-400">
+          {post.description}
+        </p>
+      )
+    }
+
+    <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-500">
+      <time
+        datetime={typeof post.publishDate === 'string'
+          ? post.publishDate
+          : post.publishDate.toISOString()}
+      >
+        {formatDate(post.publishDate)}
+      </time>
+
+      {
+        post.readingTime && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>{post.readingTime}분 읽기</span>
+          </>
+        )
+      }
+
+      {
+        post.author && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>{post.author}</span>
+          </>
+        )
+      }
+    </div>
+
+    {
+      post.tags.length > 0 && (
+        <div class="mt-3 flex flex-wrap gap-2">
+          {post.tags.slice(0, 3).map((tag) => (
+            <span class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+              {tag}
+            </span>
+          ))}
+          {post.tags.length > 3 && (
+            <span class="inline-flex items-center text-xs text-gray-500 dark:text-gray-500">
+              +{post.tags.length - 3}
+            </span>
+          )}
+        </div>
+      )
+    }
+  </article>
+</Card>
