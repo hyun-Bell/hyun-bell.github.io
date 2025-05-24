@@ -1,25 +1,31 @@
-// import { defineCollection, z } from 'astro:content';
-import { z } from 'astro:content';
+import { defineCollection, z } from 'astro:content';
+import { blogLoader } from '@/lib/content/loader';
 
-// TODO: Notion loader will be implemented in the next step
-// defineCollection will be used when implementing collections
-
-// 블로그 포스트 스키마 정의
-const blogSchema = z.object({
+// 블로그 포스트 스키마
+export const blogSchema = z.object({
+  id: z.string(),
   title: z.string(),
   description: z.string().optional(),
-  publishDate: z.date(),
-  lastModified: z.date(),
-  tags: z.array(z.string()).default([]),
-  draft: z.boolean().default(false),
-  featured: z.boolean().default(false),
+  slug: z.string(),
+  published: z.boolean(),
+  publishDate: z.coerce.date(),
+  lastModified: z.coerce.date(),
+  tags: z.array(z.string()),
+  featured: z.boolean(),
+  author: z.string().optional(),
+  content: z.string().optional(),
+  readingTime: z.number().optional(),
 });
 
-// Content collections will be configured when Notion integration is ready
+// 블로그 컬렉션 정의
+const blog = defineCollection({
+  loader: blogLoader,
+  schema: blogSchema,
+});
+
 export const collections = {
-  // blog: defineCollection({
-  //   schema: blogSchema,
-  // }),
+  blog,
 };
 
+// 타입 추출
 export type BlogPost = z.infer<typeof blogSchema>;

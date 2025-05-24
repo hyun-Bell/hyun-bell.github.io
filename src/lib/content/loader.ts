@@ -1,4 +1,5 @@
-import type { BlogPost, Project, Snippet } from '@/lib/types/notion'; /**
+import type { BlogPost, Project, Snippet } from '@/lib/types/notion';
+/**
  * Astro Content Collection 로더
  * Notion 데이터를 Astro Content로 변환
  */
@@ -41,12 +42,7 @@ export const blogLoader: Loader = {
         const id = post.slug;
         const data = await parseData({
           id: post.slug,
-          data: {
-            ...post,
-            // Date 객체를 문자열로 변환 (Astro 요구사항)
-            publishDate: post.publishDate.toISOString(),
-            lastModified: post.lastModified.toISOString(),
-          },
+          data: { ...post },
         });
         const digest = generateDigest(data);
 
@@ -66,8 +62,8 @@ export const blogLoader: Loader = {
     description: z.string().optional(),
     slug: z.string(),
     published: z.boolean().default(false),
-    publishDate: z.string().transform((str) => new Date(str)),
-    lastModified: z.string().transform((str) => new Date(str)),
+    publishDate: z.coerce.date(),
+    lastModified: z.coerce.date(),
     tags: z.array(z.string()).default([]),
     featured: z.boolean().default(false),
     author: z.string().optional(),
