@@ -1,24 +1,38 @@
-# build output
-dist/
-# generated types
-.astro/
-
 # dependencies
 node_modules/
+.pnpm-store/
+
+# build output
+dist/
+.astro/
 
 # logs
+*.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-
 
 # environment variables
 .env
-.env.production
+.env.local
+.env.production.local
+.env.*.local
 
-# macOS-specific files
-.DS_Store
-
-# jetbrains setting folder
+# editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# test coverage
+coverage/
+.nyc_output/
+
+# Notion cache
+.astro/notion-cache/
