@@ -1,13 +1,13 @@
 ---
 export interface Props {
   title?: string;
-  description?: string;
+  description?: string | undefined;
   image?: string;
   type?: 'website' | 'article';
   publishedTime?: string;
   modifiedTime?: string;
-  author?: string;
-  tags?: string[];
+  author?: string | undefined;
+  tags?: string[] | undefined;
   noindex?: boolean;
 }
 

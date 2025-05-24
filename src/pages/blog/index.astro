@@ -1,0 +1,88 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BlogCard from '@/components/blog/BlogCard.astro';
+import Pagination from '@/components/blog/Pagination.astro';
+import { SITE_CONSTANTS } from '@/lib/constants';
+
+// 첫 페이지 데이터 가져오기
+const allPosts = await getCollection('blog');
+const sortedPosts = allPosts.sort(
+  (a, b) => new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime(),
+);
+
+const postsPerPage = SITE_CONSTANTS.POSTS_PER_PAGE;
+const totalPages = Math.ceil(sortedPosts.length / postsPerPage);
+const posts = sortedPosts.slice(0, postsPerPage);
+const featuredPost = sortedPosts.find((post) => post.data.featured);
+
+// Featured 포스트를 제외한 일반 포스트들
+const regularPosts = featuredPost ? posts.filter((post) => post.id !== featuredPost.id) : posts;
+---
+
+<BaseLayout title="블로그" description="개발 관련 인사이트와 경험을 공유하는 기술 블로그">
+  <div class="container py-16">
+    <!-- 페이지 헤더 -->
+    <header class="mb-12 text-center">
+      <h1 class="mb-4 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
+        블로그
+      </h1>
+      <p class="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400">
+        실무에서 얻은 인사이트와 개발 경험을 공유합니다
+      </p>
+    </header>
+
+    <!-- Featured 포스트 -->
+    {
+      featuredPost && (
+        <section class="mb-12">
+          <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Featured Post</h2>
+          <div class="grid grid-cols-1">
+            <BlogCard
+              post={{
+                ...featuredPost.data,
+                published: featuredPost.data.published ?? false,
+                tags: featuredPost.data.tags ?? [],
+                featured: featuredPost.data.featured ?? false,
+              }}
+              featured
+            />
+          </div>
+        </section>
+      )
+    }
+
+    <!-- 포스트 목록 -->
+    <section class="mb-16">
+      {
+        featuredPost && (
+          <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">최신 포스트</h2>
+        )
+      }
+
+      {
+        posts.length > 0 ? (
+          <div class="grid gap-6 md:grid-cols-2">
+            {regularPosts.map((post) => (
+              <BlogCard
+                post={{
+                  ...post.data,
+                  published: post.data.published ?? false,
+                  tags: post.data.tags ?? [],
+                  featured: post.data.featured ?? false,
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div class="text-center">
+            <p class="text-gray-600 dark:text-gray-400">아직 작성된 포스트가 없습니다.</p>
+          </div>
+        )
+      }
+    </section>
+
+    <!-- 페이지네이션 -->
+    {totalPages > 1 && <Pagination currentPage={1} totalPages={totalPages} basePath="/blog/page" />}
+  </div>
+</BaseLayout>
