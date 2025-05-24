@@ -44,7 +44,7 @@ export const env = {
   PUBLIC_SITE_URL: () => getRequiredEnv('PUBLIC_SITE_URL'),
   PUBLIC_SITE_TITLE: () => getRequiredEnv('PUBLIC_SITE_TITLE'),
   PUBLIC_SITE_DESCRIPTION: () => getRequiredEnv('PUBLIC_SITE_DESCRIPTION'),
-  PUBLIC_AUTHOR_NAME: () => getRequiredEnv('PUBLIC_AUTHOR_NAME'),
+  PUBLIC_AUTHOR_NAME: () => getOptionalEnv('PUBLIC_AUTHOR_NAME', 'Anonymous'),
   PUBLIC_AUTHOR_EMAIL: () => getRequiredEnv('PUBLIC_AUTHOR_EMAIL'),
 
   // Social

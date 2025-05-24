@@ -138,15 +138,16 @@ export type NotionBlock = {
 export interface BlogPost {
   id: string;
   title: string;
-  description?: string;
+  description?: string | undefined;
   slug: string;
   published: boolean;
   publishDate: Date;
   lastModified: Date;
   tags: string[];
   featured: boolean;
-  author?: string;
-  content?: string; // HTML로 변환된 컨텐츠
+  author?: string | undefined;
+  content?: string | undefined; // HTML로 변환된 컨텐츠
+  readingTime?: number | undefined; // 읽기 시간 (분)
 }
 
 export interface Project {
@@ -155,18 +156,18 @@ export interface Project {
   description: string;
   status: 'In Progress' | 'Completed' | 'Planned';
   techStack: string[];
-  githubUrl?: string;
-  liveUrl?: string;
-  startDate?: Date;
-  endDate?: Date;
-  content?: string;
+  githubUrl?: string | undefined;
+  liveUrl?: string | undefined;
+  startDate?: Date | undefined;
+  endDate?: Date | undefined;
+  content?: string | undefined;
 }
 
 export interface Snippet {
   id: string;
   title: string;
-  language?: string;
+  language?: string | undefined;
   tags: string[];
-  description?: string;
-  code?: string;
+  description?: string | undefined;
+  code?: string | undefined;
 }

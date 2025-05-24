@@ -6,6 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro check && astro build",
+    "build:fresh": "pnpm cache:clear && pnpm build",
     "preview": "astro preview",
     "astro": "astro",
     "lint": "eslint . --ext .ts,.tsx,.astro",
@@ -13,7 +14,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "astro check && tsc --noEmit",
-    "clean": "rimraf dist .astro node_modules/.cache"
+    "clean": "rimraf dist .astro node_modules/.cache",
+    "cache:clear": "node scripts/clear-cache.js"
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [
@@ -37,7 +39,10 @@
     "@astrojs/react": "^4.3.0",
     "@astrojs/sitemap": "^3.4.0",
     "@astrojs/tailwind": "^6.0.2",
+    "@notionhq/client": "^3.1.2",
     "astro": "^5.8.0",
+    "md5": "^2.3.0",
+    "notion-to-md": "^3.1.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.25.28"
@@ -49,6 +54,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@types/jest": "^29.5.14",
+    "@types/md5": "^2.3.5",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.5",
     "@types/react-dom": "^19.1.5",
