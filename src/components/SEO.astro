@@ -1,0 +1,76 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
+  tags?: string[];
+  noindex?: boolean;
+}
+
+const {
+  title = 'DevBlog',
+  description = '개발 관련 인사이트를 공유하는 기술 블로그',
+  image = '/og-default.png',
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  author,
+  tags = [],
+  noindex = false,
+} = Astro.props;
+
+// TODO: 환경 변수에서 사이트 URL 가져오기
+const siteUrl = 'https://example.com';
+const canonicalUrl = Astro.url.origin + Astro.url.pathname;
+const imageUrl = siteUrl + (image.startsWith('/') ? image : '/' + image);
+
+// 기본 작성자 (환경 변수에서 가져올 예정)
+const defaultAuthor = 'Your Name';
+---
+
+<!-- Primary Meta Tags -->
+<title>{title}</title>
+<meta name="title" content={title} />
+<meta name="description" content={description} />
+<link rel="canonical" href={canonicalUrl} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonicalUrl} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={imageUrl} />
+<meta property="og:site_name" content="DevBlog" />
+<meta property="og:locale" content="ko_KR" />
+
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content={canonicalUrl} />
+<meta property="twitter:title" content={title} />
+<meta property="twitter:description" content={description} />
+<meta property="twitter:image" content={imageUrl} />
+
+<!-- Article specific -->
+{
+  type === 'article' && (
+    <>
+      <meta property="article:author" content={author || defaultAuthor} />
+      {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+      {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+      {tags.map((tag) => (
+        <meta property="article:tag" content={tag} />
+      ))}
+    </>
+  )
+}
+
+<!-- Robots -->
+{noindex && <meta name="robots" content="noindex, nofollow" />}
+
+<!-- Additional -->
+<meta name="author" content={author || defaultAuthor} />
+{tags.length > 0 && <meta name="keywords" content={tags.join(', ')} />}
