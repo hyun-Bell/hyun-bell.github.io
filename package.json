@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro check && astro build",
+    "build": "astro check && astro build && pnpm notion:check",
     "build:fresh": "pnpm cache:clear && pnpm build",
     "postbuild": "node scripts/security-check.js",
     "preview": "astro preview",
