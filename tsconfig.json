@@ -36,6 +36,6 @@
       "@assets/*": ["./src/assets/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.astro"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.astro", "*.ts", "*.js", "*.mjs", "*.cjs"],
   "exclude": ["dist", "node_modules", ".astro"]
 }
