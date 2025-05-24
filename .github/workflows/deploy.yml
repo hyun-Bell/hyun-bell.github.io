@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # 매일 오전 9시, 오후 1시, 오후 6시에 자동 빌드 (KST)
+    - cron: '0 0,4,9 * * *' # UTC 기준이므로 -9시간
+  workflow_dispatch: # 수동 실행 가능
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build site
+        run: pnpm build
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          PUBLIC_SITE_TITLE: ${{ secrets.PUBLIC_SITE_TITLE || 'hyunBell Blog' }}
+          PUBLIC_SITE_DESCRIPTION: ${{ secrets.PUBLIC_SITE_DESCRIPTION || 'hyunBell 기술 블로그' }}
+          PUBLIC_AUTHOR_NAME: ${{ secrets.PUBLIC_AUTHOR_NAME || github.repository_owner }}
+          PUBLIC_AUTHOR_EMAIL: ${{ secrets.PUBLIC_AUTHOR_EMAIL || 'entropy1760@gmail.com' }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
