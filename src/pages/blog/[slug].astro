@@ -1,0 +1,191 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import TableOfContents from '@/components/blog/TableOfContents.astro';
+import ReadingProgress from '@/components/blog/ReadingProgress.astro';
+import Button from '@/components/ui/Button.astro';
+import { formatDate } from '@/lib/utils/strings';
+import { getNotionClient } from '@/lib/notion/client';
+import { marked } from 'marked';
+import { gfmHeadingId } from 'marked-gfm-heading-id';
+
+// marked 설정
+marked.use(gfmHeadingId());
+
+export async function getStaticPaths() {
+  const blogPosts = await getCollection('blog');
+
+  return blogPosts.map((post) => ({
+    params: { slug: post.data.slug },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { data } = post;
+
+// Notion에서 콘텐츠 가져오기
+const client = getNotionClient();
+const content = await client.getPageContent(data.id);
+
+// Markdown을 HTML로 변환
+const htmlContent = marked(content);
+
+// 헤딩 추출 (목차용)
+const headingRegex = /^(#{2,3})\s+(.+)$/gm;
+const headings: Array<{ depth: number; text: string; slug: string }> = [];
+let match;
+
+while ((match = headingRegex.exec(content)) !== null) {
+  const depth = match[1]!.length;
+  const text = match[2]!;
+  const slug = text
+    .toLowerCase()
+    .replace(/[^\w\s가-힣-]/g, '')
+    .replace(/\s+/g, '-');
+
+  headings.push({ depth, text, slug });
+}
+
+// 관련 포스트 가져오기
+const allPosts = await getCollection('blog');
+const tagsArray = data.tags || [];
+const relatedPosts =
+  tagsArray.length > 0
+    ? allPosts
+        .filter((p) => {
+          const pTags = p.data.tags || [];
+          return p.data.slug !== data.slug && pTags.some((tag) => tagsArray.includes(tag));
+        })
+        .slice(0, 3)
+    : [];
+
+// 날짜 변환 헬퍼
+const toISOString = (date: Date | string): string => {
+  return typeof date === 'string' ? date : date.toISOString();
+};
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  type="article"
+  publishedTime={toISOString(data.publishDate)}
+  modifiedTime={toISOString(data.lastModified)}
+  author={data.author}
+  tags={tagsArray}
+>
+  <ReadingProgress />
+
+  <!-- 구조화된 데이터 (JSON-LD) -->
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: data.title,
+      description: data.description || '',
+      author: {
+        '@type': 'Person',
+        name: data.author || 'Anonymous',
+      },
+      datePublished: toISOString(data.publishDate),
+      dateModified: toISOString(data.lastModified),
+      keywords: tagsArray.join(', '),
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': Astro.url.href,
+      },
+    })}
+  />
+
+  <article class="container py-16">
+    <div class="mx-auto max-w-4xl">
+      <!-- 헤더 -->
+      <header class="mb-8">
+        <h1
+          class="mb-4 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl"
+        >
+          {data.title}
+        </h1>
+
+        {
+          data.description && (
+            <p class="mb-6 text-xl text-gray-600 dark:text-gray-400">{data.description}</p>
+          )
+        }
+
+        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+          {data.author && <span>{data.author}</span>}
+          <time datetime={toISOString(data.publishDate)}>
+            {formatDate(data.publishDate)}
+          </time>
+          {data.readingTime && <span>{data.readingTime}분 읽기</span>}
+        </div>
+
+        {
+          tagsArray.length > 0 && (
+            <div class="mt-4 flex flex-wrap gap-2">
+              {tagsArray.map((tag) => (
+                <a
+                  href={`/blog/tags/${tag}`}
+                  class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  #{tag}
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </header>
+
+      <!-- 콘텐츠 -->
+      <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <!-- 본문 -->
+        <div class="lg:col-span-9">
+          <div class="prose prose-lg max-w-none dark:prose-invert" set:html={htmlContent} />
+        </div>
+
+        <!-- 사이드바 (목차) -->
+        <aside class="hidden lg:col-span-3 lg:block">
+          <TableOfContents headings={headings} />
+        </aside>
+      </div>
+
+      <!-- 하단 네비게이션 -->
+      <nav class="mt-16 border-t border-gray-200 pt-8 dark:border-gray-800">
+        <div class="flex items-center justify-between">
+          <Button href="/blog" variant="outline"> ← 목록으로 </Button>
+        </div>
+      </nav>
+
+      <!-- 관련 포스트 -->
+      {
+        relatedPosts.length > 0 && (
+          <section class="mt-16">
+            <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">관련 포스트</h2>
+            <div class="grid gap-6 md:grid-cols-3">
+              {relatedPosts.map((relatedPost) => (
+                <a
+                  href={`/blog/${relatedPost.data.slug}`}
+                  class="group block rounded-lg border border-gray-200 p-4 transition-all hover:border-gray-300 hover:shadow-lg dark:border-gray-800 dark:hover:border-gray-700"
+                >
+                  <h3 class="mb-2 font-semibold text-gray-900 group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400">
+                    {relatedPost.data.title}
+                  </h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDate(relatedPost.data.publishDate)}
+                  </p>
+                </a>
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </div>
+  </article>
+</BaseLayout>

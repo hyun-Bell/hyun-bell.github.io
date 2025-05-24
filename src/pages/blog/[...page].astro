@@ -1,0 +1,150 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import BlogCard from '@/components/blog/BlogCard.astro';
+import Pagination from '@/components/blog/Pagination.astro';
+import { SITE_CONSTANTS } from '@/lib/constants';
+import type { CollectionEntry } from 'astro:content';
+
+export async function getStaticPaths() {
+  const allPosts = await getCollection('blog');
+
+  if (allPosts.length === 0) {
+    return [
+      {
+        params: { page: undefined },
+        props: {
+          posts: [],
+          currentPage: 1,
+          totalPages: 1,
+          totalPosts: 0,
+        },
+      },
+    ];
+  }
+
+  // 날짜순 정렬
+  const sortedPosts = allPosts.sort(
+    (a, b) => new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime(),
+  );
+
+  const postsPerPage = SITE_CONSTANTS.POSTS_PER_PAGE;
+  const totalPages = Math.ceil(sortedPosts.length / postsPerPage);
+
+  // 모든 페이지 생성
+  return Array.from({ length: totalPages }, (_, i) => {
+    const pageNum = i + 1;
+    const start = i * postsPerPage;
+    const end = start + postsPerPage;
+
+    return {
+      params: {
+        // 첫 페이지는 /blog, 나머지는 /blog/2, /blog/3 등
+        page: pageNum === 1 ? undefined : pageNum.toString(),
+      },
+      props: {
+        posts: sortedPosts.slice(start, end),
+        currentPage: pageNum,
+        totalPages,
+        totalPosts: sortedPosts.length,
+      },
+    };
+  });
+}
+
+interface Props {
+  posts: CollectionEntry<'blog'>[];
+  currentPage: number;
+  totalPages: number;
+  totalPosts: number;
+}
+
+const { posts, currentPage, totalPages, totalPosts } = Astro.props;
+
+// Featured 포스트 (첫 페이지에만 표시)
+const featuredPost = currentPage === 1 ? posts.find((post) => post.data.featured) : null;
+
+// Featured 포스트를 제외한 일반 포스트들
+const regularPosts = featuredPost ? posts.filter((post) => post.id !== featuredPost.id) : posts;
+
+// 페이지 타이틀
+const pageTitle = currentPage === 1 ? '블로그' : `블로그 - ${currentPage}페이지`;
+---
+
+<BaseLayout title={pageTitle} description="개발 관련 인사이트와 경험을 공유하는 기술 블로그">
+  <div class="container py-16">
+    <!-- 페이지 헤더 -->
+    <header class="mb-12 text-center">
+      <h1 class="mb-4 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
+        블로그
+      </h1>
+      <p class="mb-2 text-lg text-gray-600 dark:text-gray-400">
+        실무에서 얻은 인사이트와 개발 경험을 공유합니다
+      </p>
+      <p class="text-sm text-gray-500 dark:text-gray-500">
+        총 {totalPosts}개의 포스트
+      </p>
+    </header>
+
+    <!-- Featured 포스트 (첫 페이지에만) -->
+    {
+      featuredPost && currentPage === 1 && (
+        <section class="mb-12">
+          <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">✨ Featured Post</h2>
+          <div class="grid grid-cols-1">
+            <BlogCard
+              post={{
+                ...featuredPost.data,
+                published: featuredPost.data.published,
+                tags: featuredPost.data.tags,
+                featured: featuredPost.data.featured,
+              }}
+              featured
+            />
+          </div>
+        </section>
+      )
+    }
+
+    <!-- 포스트 목록 -->
+    <section class="mb-16">
+      {
+        currentPage === 1 && featuredPost && (
+          <h2 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">📝 최신 포스트</h2>
+        )
+      }
+
+      {
+        regularPosts.length > 0 ? (
+          <div class="grid gap-6 md:grid-cols-2">
+            {regularPosts.map((post) => (
+              <BlogCard
+                post={{
+                  ...post.data,
+                  published: post.data.published,
+                  tags: post.data.tags,
+                  featured: post.data.featured,
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center dark:border-gray-800 dark:bg-gray-900">
+            <p class="text-gray-600 dark:text-gray-400">
+              {currentPage === 1
+                ? '아직 작성된 포스트가 없습니다.'
+                : '이 페이지에 표시할 포스트가 없습니다.'}
+            </p>
+          </div>
+        )
+      }
+    </section>
+
+    <!-- 페이지네이션 -->
+    {
+      totalPages > 1 && (
+        <Pagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" />
+      )
+    }
+  </div>
+</BaseLayout>
