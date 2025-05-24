@@ -7,9 +7,9 @@ export interface Props {
 
 const { currentPage, totalPages, basePath } = Astro.props;
 
-// 페이지 번호 생성 로직
+// 페이지 번호 생성
 const getPageNumbers = (): (number | string)[] => {
-  const delta = 2;
+  const delta = 1;
   const range: number[] = [];
   const rangeWithDots: (number | string)[] = [];
   let l: number | undefined;
@@ -38,38 +38,34 @@ const getPageNumbers = (): (number | string)[] => {
 const pageNumbers = getPageNumbers();
 ---
 
-<nav class="flex items-center justify-center space-x-1" aria-label="페이지네이션">
+<nav class="flex items-center justify-center gap-2 font-mono text-sm" aria-label="페이지네이션">
   {/* 이전 페이지 */}
   <a
     href={currentPage === 1 ? '#' : currentPage === 2 ? '/blog' : `${basePath}/${currentPage - 1}`}
-    class={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+    class={`px-3 py-1 ${
       currentPage === 1
         ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
-        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+        : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
     }`}
     aria-disabled={currentPage === 1}
     tabindex={currentPage === 1 ? -1 : 0}
   >
-    <svg class="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"
-      ></path>
-    </svg>
-    이전
+    &lt; prev
   </a>
 
   {/* 페이지 번호 */}
-  <div class="flex items-center space-x-1">
+  <div class="flex items-center gap-1">
     {
       pageNumbers.map((number) =>
         number === '...' ? (
-          <span class="px-3 py-2 text-sm text-gray-500 dark:text-gray-500">...</span>
+          <span class="px-2 text-gray-500 dark:text-gray-500">...</span>
         ) : (
           <a
             href={number === 1 ? '/blog' : `${basePath}/${number}`}
-            class={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            class={`px-3 py-1 ${
               currentPage === number
-                ? 'bg-primary-600 text-white dark:bg-primary-500'
-                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
             }`}
             aria-current={currentPage === number ? 'page' : undefined}
           >
@@ -83,17 +79,14 @@ const pageNumbers = getPageNumbers();
   {/* 다음 페이지 */}
   <a
     href={currentPage === totalPages ? '#' : `${basePath}/${currentPage + 1}`}
-    class={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+    class={`px-3 py-1 ${
       currentPage === totalPages
         ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
-        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+        : 'text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400'
     }`}
     aria-disabled={currentPage === totalPages}
     tabindex={currentPage === totalPages ? -1 : 0}
   >
-    다음
-    <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-    </svg>
+    next &gt;
   </a>
 </nav>
