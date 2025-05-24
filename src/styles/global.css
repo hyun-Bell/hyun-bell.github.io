@@ -5,24 +5,17 @@
 
 /* Custom Font Face */
 @font-face {
-  font-family: 'Pretendard';
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/Pretendard-Regular.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Pretendard';
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/Pretendard-Bold.woff2') format('woff2');
-}
-
-@font-face {
   font-family: 'JetBrains Mono';
   font-weight: 400;
   font-display: swap;
   src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
 }
 
 /* Base Styles */
@@ -39,24 +32,35 @@
 
   body {
     @apply bg-white text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 
-  /* Scrollbar Styles */
+  /* 코드와 모노스페이스 텍스트 */
+  code,
+  pre,
+  .font-mono {
+    font-family:
+      'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Inconsolata', 'Operator Mono',
+      'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+  }
+
+  /* Scrollbar Styles - 더 미니멀하게 */
   ::-webkit-scrollbar {
-    @apply h-2 w-2;
+    @apply h-1.5 w-1.5;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-gray-800;
+    @apply bg-transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-gray-400 hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500;
+    @apply bg-gray-300 dark:bg-gray-700;
   }
 
-  /* Selection */
+  /* Selection - 개발자스럽게 */
   ::selection {
-    @apply bg-primary-500/20 text-primary-900 dark:bg-primary-400/20 dark:text-primary-100;
+    @apply bg-primary-500 text-white;
   }
 }
 
@@ -64,48 +68,35 @@
 @layer components {
   /* Container */
   .container {
-    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-4xl px-4 sm:px-6;
   }
 
-  /* Prose Customization */
+  /* Prose - 더 깔끔하게 */
   .prose {
-    @apply prose-gray max-w-none dark:prose-invert prose-headings:scroll-mt-20 prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline dark:prose-a:text-primary-400;
+    @apply prose-gray max-w-none dark:prose-invert;
   }
 
-  /* Buttons */
-  .btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  .prose pre {
+    @apply border border-gray-200 dark:border-gray-800;
   }
 
-  .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 dark:bg-primary-500 dark:hover:bg-primary-600;
+  .prose code {
+    @apply font-normal;
   }
 
-  .btn-secondary {
-    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+  /* 링크 호버 효과 제거 */
+  a {
+    @apply transition-colors;
   }
 }
 
 /* Utility Styles */
 @layer utilities {
-  /* Animations */
-  .animate-in {
-    animation: animate-in 0.5s ease-out;
-  }
-
-  @keyframes animate-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Text Balance */
-  .text-balance {
-    text-wrap: balance;
+  /* 라인 클램프 */
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 }
