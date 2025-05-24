@@ -4,9 +4,10 @@
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "bradlc.vscode-tailwindcss",
-    "formulahendry.auto-rename-tag",
     "christian-kohler.path-intellisense",
-    "visualstudioexptteam.vscodeintellicode",
-    "streetsidesoftware.code-spell-checker"
+    "usernamehw.errorlens",
+    "yoavbls.pretty-ts-errors",
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-korean"
   ]
 }

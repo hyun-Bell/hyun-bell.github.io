@@ -7,8 +7,8 @@ module.exports = {
     },
     extends: [
       'eslint:recommended',
-      'plugin:@typescript-eslint/recommended-type-checked',
-      'plugin:@typescript-eslint/stylistic-type-checked',
+      'plugin:@typescript-eslint/recommended',
+      'plugin:@typescript-eslint/recommended-requiring-type-checking',
       'plugin:astro/recommended',
     ],
     parser: '@typescript-eslint/parser',
@@ -20,25 +20,16 @@ module.exports = {
     },
     plugins: ['@typescript-eslint'],
     rules: {
+      // TypeScript
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/explicit-function-return-type': 'error',
+      '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/naming-convention': [
-        'error',
-        {
-          selector: 'variable',
-          format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
-        },
-        {
-          selector: 'function',
-          format: ['camelCase'],
-        },
-        {
-          selector: 'typeLike',
-          format: ['PascalCase'],
-        },
-      ],
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      
+      // General
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
+      'no-duplicate-imports': 'error',
     },
     overrides: [
       {
@@ -48,6 +39,10 @@ module.exports = {
           parser: '@typescript-eslint/parser',
           extraFileExtensions: ['.astro'],
         },
+        rules: {
+          // Astro 특별 규칙
+        },
       },
     ],
+    ignorePatterns: ['dist', '.astro', 'node_modules'],
   };

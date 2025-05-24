@@ -1,0 +1,25 @@
+# Build outputs
+dist/
+.astro/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files
+.env*
+
+# Caches
+.cache/
+.temp/
+
+# Coverage
+coverage/
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+
+# Generated files
+*.min.js
+*.min.css

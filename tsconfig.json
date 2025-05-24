@@ -6,7 +6,6 @@
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
-    "allowJs": false,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -15,21 +14,27 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+
+    // 엄격한 타입 체크
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": false,
+    "exactOptionalPropertyTypes": true,
+
+    // 경로 별칭
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@components/*": ["./src/components/*"],
       "@layouts/*": ["./src/layouts/*"],
       "@lib/*": ["./src/lib/*"],
       "@content/*": ["./src/content/*"],
-      "@styles/*": ["./src/styles/*"]
-    },
-    "types": ["astro/client", "node", "@types/jest"]
+      "@styles/*": ["./src/styles/*"],
+      "@assets/*": ["./src/assets/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.astro"],
   "exclude": ["dist", "node_modules", ".astro"]
