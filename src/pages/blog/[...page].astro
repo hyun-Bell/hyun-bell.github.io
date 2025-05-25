@@ -1,24 +1,15 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import PostListItem from '@/components/PostListItem.astro';
 import Pagination from '@/components/blog/Pagination.astro';
 import { SITE_CONSTANTS } from '@/lib/constants';
-import type { CollectionEntry } from 'astro:content';
 
 export async function getStaticPaths() {
-  const allPosts = await getCollection('blog');
-
-  if (allPosts.length === 0) {
-    return [
-      {
-        params: { page: undefined },
-        props: { posts: [], currentPage: 1, totalPages: 1, totalPosts: 0 },
-      },
-    ];
-  }
-
-  const sortedPosts = allPosts.sort(
-    (a, b) => new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime(),
+  const posts = await getCollection('blog');
+  const publishedPosts = posts.filter((post) => post.data.published);
+  const sortedPosts = publishedPosts.sort(
+    (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime(),
   );
 
   const postsPerPage = SITE_CONSTANTS.POSTS_PER_PAGE;
@@ -41,86 +32,22 @@ export async function getStaticPaths() {
   });
 }
 
-interface Props {
-  posts: CollectionEntry<'blog'>[];
-  currentPage: number;
-  totalPages: number;
-  totalPosts: number;
-}
-
 const { posts, currentPage, totalPages, totalPosts } = Astro.props;
-const pageTitle = currentPage === 1 ? '블로그' : `블로그 - ${currentPage}페이지`;
 ---
 
-<BaseLayout title={pageTitle} description="개발 관련 인사이트와 경험을 공유하는 기술 블로그">
-  <div class="container py-8">
-    <header class="mb-8">
-      <h1 class="font-mono text-2xl font-bold text-gray-900 dark:text-gray-100">
-        <span class="text-primary-500">&gt;</span> Blog_
+<BaseLayout title="블로그" description="개발 관련 글들을 모아놓은 공간">
+  <div class="mx-auto max-w-3xl">
+    <header class="mb-12">
+      <h1 class="mb-4 font-mono text-3xl font-bold">
+        <span class="text-blue-600 dark:text-blue-400">~/</span>blog
       </h1>
-      <p class="mt-2 font-mono text-sm text-gray-600 dark:text-gray-400">
-        /* Total {totalPosts} posts - Page {currentPage}/{totalPages} */
+      <p class="font-mono text-sm text-gray-600 dark:text-gray-400">
+        total: {totalPosts} posts | page: {currentPage}/{totalPages}
       </p>
     </header>
 
-    <div class="posts-container space-y-1">
-      {
-        posts.map((post, index) => (
-          <article class="post-item group" style={`--stagger: ${index * 50}ms`}>
-            <a
-              href={`/blog/${post.data.slug}`}
-              class="post-link relative flex items-start gap-4 rounded-lg border border-transparent p-4 transition-all hover:border-gray-200 hover:bg-gray-50 dark:hover:border-gray-800 dark:hover:bg-gray-900/50"
-              data-astro-prefetch="hover"
-            >
-              <div class="flex-shrink-0 font-mono text-xs text-gray-400 dark:text-gray-600">
-                {String((currentPage - 1) * SITE_CONSTANTS.POSTS_PER_PAGE + index + 1).padStart(
-                  2,
-                  '0',
-                )}
-              </div>
-
-              <div class="flex-1 space-y-1">
-                <div class="flex items-center gap-3 font-mono text-xs text-gray-500 dark:text-gray-500">
-                  <time datetime={new Date(post.data.publishDate).toISOString()}>
-                    {new Date(post.data.publishDate).toISOString().split('T')[0]}
-                  </time>
-                  {post.data.readingTime && (
-                    <>
-                      <span>•</span>
-                      <span>{post.data.readingTime}min</span>
-                    </>
-                  )}
-                </div>
-
-                <h2
-                  class="text-lg font-semibold text-gray-900 transition-colors group-hover:text-primary-600 dark:text-gray-100 dark:group-hover:text-primary-400"
-                  transition:name={`post-title-${post.data.slug}`}
-                >
-                  {post.data.title}
-                </h2>
-
-                {post.data.description && (
-                  <p class="line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                    {post.data.description}
-                  </p>
-                )}
-
-                {post.data.tags.length > 0 && (
-                  <div class="flex flex-wrap gap-2 pt-2">
-                    {post.data.tags.map((tag) => (
-                      <span class="font-mono text-xs text-gray-500 dark:text-gray-500">#{tag}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div class="arrow flex-shrink-0 text-gray-400 opacity-0 transition-all group-hover:translate-x-1 group-hover:opacity-100 dark:text-gray-600">
-                →
-              </div>
-            </a>
-          </article>
-        ))
-      }
+    <div class="space-y-2">
+      {posts.map((post, index) => <PostListItem post={post} index={index} showNumber={true} />)}
     </div>
 
     {
@@ -132,64 +59,3 @@ const pageTitle = currentPage === 1 ? '블로그' : `블로그 - ${currentPage}�
     }
   </div>
 </BaseLayout>
-
-<style>
-  /* 포스트 스태거 애니메이션 */
-  @keyframes fade-slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .post-item {
-    animation: fade-slide-up 0.6s cubic-bezier(0, 0, 0.2, 1) both;
-    animation-delay: var(--stagger);
-  }
-
-  /* 호버 시 화살표 애니메이션 */
-  .post-link:hover .arrow {
-    animation: arrow-bounce 0.5s ease-in-out;
-  }
-
-  @keyframes arrow-bounce {
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-    50% {
-      transform: translateX(4px);
-    }
-  }
-
-  /* View Transition 중 리스트 유지 */
-  ::view-transition-group(posts-container) {
-    animation-duration: 0.3s;
-  }
-</style>
-
-<script>
-  document.addEventListener('astro:page-load', () => {
-    // 스크롤 위치 저장을 위한 세션 스토리지 활용
-    const posts = document.querySelectorAll('.post-link');
-
-    posts.forEach((link) => {
-      link.addEventListener('click', () => {
-        sessionStorage.setItem('blog-scroll-position', window.scrollY.toString());
-      });
-    });
-
-    // 돌아왔을 때 스크롤 위치 복원
-    const savedScroll = sessionStorage.getItem('blog-scroll-position');
-    if (savedScroll && document.referrer.includes('/blog/')) {
-      requestAnimationFrame(() => {
-        window.scrollTo(0, parseInt(savedScroll));
-        sessionStorage.removeItem('blog-scroll-position');
-      });
-    }
-  });
-</script>

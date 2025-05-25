@@ -1,139 +1,54 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import PostListItem from '@/components/PostListItem.astro';
 import { getCollection } from 'astro:content';
 
-// 블로그 포스트 가져오기
-const allPosts = await getCollection('blog');
-const sortedPosts = allPosts.sort(
-  (a, b) => new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime(),
-);
-
-// 메인페이지에 표시할 최신 포스트
-const recentPosts = sortedPosts.slice(0, 6);
+const posts = await getCollection('blog');
+const recentPosts = posts
+  .filter((post) => post.data.published)
+  .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime())
+  .slice(0, 5);
 ---
 
 <BaseLayout>
-  <div class="container py-8">
-    <!-- 심플한 헤더 -->
-    <header class="mb-12">
-      <h1 class="font-mono text-2xl font-bold text-gray-900 dark:text-gray-100">
-        <span class="text-primary-500">&gt;</span> Recent Posts_
+  <div class="mx-auto max-w-3xl">
+    <!-- Hero Section -->
+    <section class="mb-16 space-y-4 text-center">
+      <h1 class="font-mono text-4xl font-bold sm:text-5xl">
+        <span class="text-blue-600 dark:text-blue-400">Hello</span>, World!
       </h1>
-      <p class="mt-2 font-mono text-sm text-gray-600 dark:text-gray-400">
-        /* {sortedPosts.length} posts available */
+      <p class="text-lg text-gray-600 dark:text-gray-400">
+        개발하며 배운 것들을 기록하는 공간입니다.
       </p>
-    </header>
+      <div class="flex justify-center gap-4 font-mono text-sm">
+        <a href="/blog" class="text-blue-600 hover:underline dark:text-blue-400"> /blog → </a>
+        <a href="/about" class="text-blue-600 hover:underline dark:text-blue-400"> /about → </a>
+      </div>
+    </section>
 
-    <!-- 포스트 목록 -->
-    <div class="space-y-4">
+    <!-- Recent Posts -->
+    <section>
+      <h2 class="mb-8 font-mono text-xl font-semibold text-gray-900 dark:text-gray-100">
+        <span class="text-blue-600 dark:text-blue-400">$</span> recent_posts
+      </h2>
+
+      <div class="space-y-2">
+        {recentPosts.map((post, index) => <PostListItem post={post} index={index} />)}
+      </div>
+
       {
-        recentPosts.map((post, index) => (
-          <article
-            class="post-item group"
-            data-post-id={post.data.slug}
-            style={`--delay: ${index * 50}ms`}
-          >
+        posts.length > 5 && (
+          <div class="mt-8 text-center">
             <a
-              href={`/blog/${post.data.slug}`}
-              class="post-link block border-l-2 border-transparent py-4 pl-4 transition-all hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-900/50"
-              data-astro-prefetch="hover"
+              href="/blog"
+              class="inline-flex items-center gap-2 font-mono text-sm text-blue-600 hover:underline dark:text-blue-400"
             >
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex-1">
-                  <div class="flex items-center gap-3 font-mono text-xs text-gray-500 dark:text-gray-500">
-                    <span class="text-primary-500">{String(index + 1).padStart(2, '0')}</span>
-                    <time datetime={post.data.publishDate.toISOString()}>
-                      {post.data.publishDate.toISOString().split('T')[0]}
-                    </time>
-                    {post.data.readingTime && <span>{post.data.readingTime}min read</span>}
-                  </div>
-                  <h2
-                    class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-primary-600 dark:text-gray-100 dark:group-hover:text-primary-400"
-                    transition:name={`title-${post.data.slug}`}
-                  >
-                    {post.data.title}
-                  </h2>
-                  {post.data.description && (
-                    <p class="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
-                      {post.data.description}
-                    </p>
-                  )}
-                  {post.data.tags.length > 0 && (
-                    <div class="mt-2 flex flex-wrap gap-2">
-                      {post.data.tags.map((tag) => (
-                        <span class="font-mono text-xs text-gray-500 dark:text-gray-500">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              모든 포스트 보기
+              <span>→</span>
             </a>
-          </article>
-        ))
+          </div>
+        )
       }
-    </div>
-
-    <!-- 더보기 링크 -->
-    {
-      sortedPosts.length > 6 && (
-        <div class="mt-12 text-center">
-          <a
-            href="/blog"
-            class="inline-flex items-center gap-2 font-mono text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-            data-astro-prefetch="hover"
-          >
-            <span>View all posts</span>
-            <span class="text-lg">→</span>
-          </a>
-        </div>
-      )
-    }
+    </section>
   </div>
 </BaseLayout>
-
-<style>
-  /* 포스트 아이템 초기 로드 애니메이션 */
-  @keyframes slide-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .post-item {
-    animation: slide-up 0.5s ease-out both;
-    animation-delay: var(--delay);
-  }
-
-  /* 호버 시 살짝 들어올리기 */
-  .post-link:hover {
-    transform: translateX(4px);
-  }
-
-  /* 클릭 시 포커스 효과 */
-  .post-link:active {
-    transform: translateX(4px) scale(0.99);
-  }
-</style>
-
-<script>
-  // 포스트 클릭 시 전환 준비
-  document.addEventListener('astro:page-load', () => {
-    const postLinks = document.querySelectorAll('.post-link');
-
-    postLinks.forEach((link) => {
-      link.addEventListener('click', () => {
-        const postItem = link.closest('.post-item') as HTMLElement;
-        if (postItem) {
-          postItem.style.transformOrigin = 'center center';
-        }
-      });
-    });
-  });
-</script>
