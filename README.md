@@ -1,39 +1,71 @@
-# Astro Notion Blog
+# hyunBell.dev
 
-Astro 5+와 Notion API를 활용한 개발자 블로그
+개인 기술 블로그
 
-## 🚀 프로젝트 개요
+## Skills
 
-이 프로젝트는 다음 기술을 사용합니다:
+- **Framework**: Astro 5.8
+- **Language**: TypeScript 5.8 (strict mode)
+- **Styling**: Tailwind CSS 3.4
+- **CMS**: Notion API
+- **Deployment**: GitHub Pages
 
-- Astro 5+ (Content Layer)
-- TypeScript (Strict Mode)
-- Notion API (CMS)
-- Tailwind CSS
-- GitHub Pages (배포)
+## Astro 선택 이유
 
-## 📋 개발 진행 상황
+### 1. 빌드 타임 렌더링
 
-- [x] 프로젝트 초기화
-- [ ] 개발 환경 설정
-- [ ] 기본 구조 설정
-- [ ] Notion 통합
-- [ ] UI 구현
-- [ ] 배포 설정
+Astro는 빌드 시점에 모든 페이지를 정적으로 생성합니다. 블로그처럼 콘텐츠가 자주 바뀌지 않는 사이트에 최적입니다.
 
-## 🛠️ 설치 및 실행
+### 2. Zero JavaScript by Default
 
-```bash
-# 의존성 설치
-pnpm install
+필요한 곳에만 JavaScript를 선택적으로 추가할 수 있습니다. 불필요한 번들 사이즈를 줄여 로딩 속도가 빠릅니다.
 
-# 개발 서버 실행
-pnpm dev
+### 3. Content Collections
 
-# 빌드
-pnpm build
+Astro의 Content Collections API로 타입 안전한 콘텐츠 관리가 가능합니다. Notion API와 연동하여 빌드 타임에 데이터를 가져와 정적 페이지로 만듭니다.
+
+```typescript
+// 타입 안전한 콘텐츠 관리
+const posts = await getCollection('blog');
 ```
 
-## 📝 라이선스
+### 4. Island Architecture
 
-MIT
+페이지의 대부분은 정적 HTML이고, 필요한 부분만 인터랙티브하게 만들 수 있습니다.
+
+### 5. View Transitions
+
+SPA처럼 부드러운 페이지 전환을 제공하면서도 정적 사이트의 장점을 유지합니다.
+
+## 프로젝트 구조
+
+```
+src/
+├── content/        # Content Collections
+├── lib/
+│   ├── notion/     # Notion API 클라이언트
+│   └── utils/      # 유틸리티 함수
+├── pages/          # File-based routing
+└── components/     # Astro 컴포넌트
+```
+
+## 주요 기능
+
+- Notion 데이터베이스와 연동된 자동 포스트 생성
+- 다크모드 지원 (View Transitions 유지)
+- 읽기 시간 자동 계산
+- 태그 기반 분류
+- 페이지네이션
+
+## 실행 방법
+
+```bash
+pnpm install
+pnpm dev
+```
+
+## 배포
+
+main 브랜치에 푸시하면 GitHub Actions가 자동으로 빌드하고 배포합니다.
+
+---
