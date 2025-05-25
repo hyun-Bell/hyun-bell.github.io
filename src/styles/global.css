@@ -1,102 +1,40 @@
-/* Tailwind CSS */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Font Face */
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
-}
-
-/* Base Styles */
 @layer base {
+  /* 다크모드 기본 설정 */
   :root {
-    --color-primary: 59 130 246; /* blue-500 */
-    --color-gray-900: 17 24 39;
-    --color-gray-100: 243 244 246;
+    color-scheme: light dark;
   }
 
-  html {
-    @apply scroll-smooth;
-  }
-
+  /* 폰트 스무딩 */
   body {
-    @apply bg-white text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100;
-    font-family:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* 코드와 모노스페이스 텍스트 */
-  code,
-  pre,
-  .font-mono {
-    font-family:
-      'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Inconsolata', 'Operator Mono',
-      'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
-  }
-
-  /* Scrollbar Styles - 더 미니멀하게 */
-  ::-webkit-scrollbar {
-    @apply h-1.5 w-1.5;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-700;
-  }
-
-  /* Selection - 개발자스럽게 */
-  ::selection {
-    @apply bg-primary-500 text-white;
+  /* 포커스 스타일 */
+  :focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950;
   }
 }
 
-/* Component Styles */
 @layer components {
-  /* Container */
-  .container {
-    @apply mx-auto w-full max-w-4xl px-4 sm:px-6;
+  /* 코드 블록 스타일 */
+  pre {
+    @apply rounded-lg border border-gray-200 dark:border-gray-800;
   }
 
-  /* Prose - 더 깔끔하게 */
-  .prose {
-    @apply prose-gray max-w-none dark:prose-invert;
-  }
-
-  .prose pre {
-    @apply border border-gray-200 dark:border-gray-800;
-  }
-
-  .prose code {
-    @apply font-normal;
-  }
-
-  /* 링크 호버 효과 제거 */
-  a {
-    @apply transition-colors;
+  /* 인라인 코드 스타일 */
+  :not(pre) > code {
+    @apply rounded bg-gray-100 px-1 py-0.5 text-sm dark:bg-gray-800;
   }
 }
 
-/* Utility Styles */
 @layer utilities {
-  /* 라인 클램프 */
-  .line-clamp-2 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+  /* 커스텀 유틸리티 */
+  .text-balance {
+    text-wrap: balance;
   }
 }
