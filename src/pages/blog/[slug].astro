@@ -1,9 +1,9 @@
 ---
-import ReadingProgress from '@/components/blog/ReadingProgress.astro';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import { getNotionClient } from '@/lib/notion/client';
-import { formatDate } from '@/lib/utils/strings';
 import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ReadingProgress from '@/components/blog/ReadingProgress.astro';
+import { formatDate } from '@/lib/utils/strings';
+import { getNotionClient } from '@/lib/notion/client';
 import { marked } from 'marked';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 
@@ -33,22 +33,6 @@ const content = await client.getPageContent(data.id);
 // Markdown을 HTML로 변환
 const htmlContent = marked(content);
 
-// 헤딩 추출 (목차용)
-const headingRegex = /^(#{2,3})\s+(.+)$/gm;
-const headings: Array<{ depth: number; text: string; slug: string }> = [];
-let match;
-
-while ((match = headingRegex.exec(content)) !== null) {
-  const depth = match[1]!.length;
-  const text = match[2]!;
-  const slug = text
-    .toLowerCase()
-    .replace(/[^\w\s가-힣-]/g, '')
-    .replace(/\s+/g, '-');
-
-  headings.push({ depth, text, slug });
-}
-
 // 날짜 변환 헬퍼
 const toISOString = (date: Date | string): string => {
   return typeof date === 'string' ? date : date.toISOString();
@@ -66,17 +50,13 @@ const toISOString = (date: Date | string): string => {
 >
   <ReadingProgress />
 
-  <article class="container py-8">
+  <article class="article-container container py-8">
     <div class="mx-auto max-w-3xl">
       <!-- 헤더 -->
-      <header class="mb-8">
-        <h1
-          class="mb-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl"
+      <header class="article-header mb-8">
+        <div
+          class="meta-info flex items-center gap-3 font-mono text-sm text-gray-600 dark:text-gray-400"
         >
-          {data.title}
-        </h1>
-
-        <div class="flex items-center gap-3 font-mono text-sm text-gray-600 dark:text-gray-400">
           <time datetime={toISOString(data.publishDate)}>
             {formatDate(data.publishDate, { year: 'numeric', month: '2-digit', day: '2-digit' })}
           </time>
@@ -88,19 +68,18 @@ const toISOString = (date: Date | string): string => {
               </>
             )
           }
-          {
-            data.author && (
-              <>
-                <span class="text-gray-400 dark:text-gray-600">•</span>
-                <span>{data.author}</span>
-              </>
-            )
-          }
         </div>
+
+        <h1
+          class="article-title mb-4 mt-4 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl"
+          transition:name={`title-${data.slug}`}
+        >
+          {data.title}
+        </h1>
 
         {
           data.tags.length > 0 && (
-            <div class="mt-4 flex flex-wrap gap-2">
+            <div class="tags flex flex-wrap gap-2">
               {data.tags.map((tag) => (
                 <span class="font-mono text-sm text-gray-500 dark:text-gray-500">#{tag}</span>
               ))}
@@ -111,21 +90,115 @@ const toISOString = (date: Date | string): string => {
 
       <!-- 콘텐츠 -->
       <div
-        class="prose prose-lg max-w-none dark:prose-invert prose-pre:bg-gray-900 prose-pre:text-gray-100"
+        class="article-content prose prose-lg max-w-none dark:prose-invert prose-pre:bg-gray-900 prose-pre:text-gray-100"
         set:html={htmlContent}
       />
 
       <!-- 하단 네비게이션 -->
       <nav
-        class="mt-16 flex items-center justify-between border-t border-gray-200 pt-8 dark:border-gray-800"
+        class="article-nav mt-16 flex items-center justify-between border-t border-gray-200 pt-8 dark:border-gray-800"
       >
         <a
           href="/blog"
-          class="font-mono text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+          class="back-link font-mono text-sm text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+          data-astro-prefetch="viewport"
         >
-          &lt;- back to list
+          <span class="inline-block transition-transform hover:-translate-x-1">&lt;-</span> back to list
         </a>
       </nav>
     </div>
   </article>
 </BaseLayout>
+
+<style>
+  /* 포스트 진입 애니메이션 */
+  @keyframes article-enter {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .article-container {
+    animation: article-enter 0.6s ease-out;
+  }
+
+  /* 순차적 페이드인 */
+  .article-header > * {
+    opacity: 0;
+    animation: fade-up 0.6s ease-out forwards;
+  }
+
+  .meta-info {
+    animation-delay: 0.1s;
+  }
+
+  .article-title {
+    animation-delay: 0.2s;
+  }
+
+  .tags {
+    animation-delay: 0.3s;
+  }
+
+  .article-content {
+    opacity: 0;
+    animation: fade-up 0.8s ease-out 0.4s forwards;
+  }
+
+  .article-nav {
+    opacity: 0;
+    animation: fade-up 0.6s ease-out 0.5s forwards;
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* 뒤로가기 호버 효과 */
+  .back-link {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .back-link span {
+    position: absolute;
+    left: 0;
+  }
+
+  /* 텍스트 선택 시 효과 */
+  .article-content ::selection {
+    background: rgb(59 130 246 / 0.3);
+    color: inherit;
+  }
+
+  /* 스크롤 시 콘텐츠 페이드 */
+  @media (prefers-reduced-motion: no-preference) {
+    .article-content > * {
+      transition: opacity 0.3s ease-out;
+    }
+  }
+</style>
+
+<script>
+  // 부드러운 스크롤 동작
+  document.addEventListener('astro:page-load', () => {
+    // 뒤로가기 시 스크롤 위치 복원을 위한 처리
+    const backLink = document.querySelector('.back-link');
+    if (backLink) {
+      backLink.addEventListener('click', () => {
+        // 스크롤 위치를 세션에 저장
+        sessionStorage.setItem('blog-list-scroll', window.scrollY.toString());
+      });
+    }
+  });
+</script>

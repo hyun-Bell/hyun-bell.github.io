@@ -1,4 +1,5 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
 import '../styles/global.css';
 import ThemeScript from '../components/ThemeScript.astro';
 import Header from '../components/layout/Header.astro';
@@ -30,6 +31,7 @@ const {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#ffffff" />
 
     <!-- 테마 스크립트 (FOUC 방지) -->
     <ThemeScript />
@@ -39,33 +41,186 @@ const {
 
     <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
     <!-- Fonts Preload -->
     <link
       rel="preload"
-      href="/fonts/Pretendard-Regular.woff2"
+      href="/fonts/JetBrainsMono-Regular.woff2"
       as="font"
       type="font/woff2"
       crossorigin
     />
-    <link
-      rel="preload"
-      href="/fonts/Pretendard-Bold.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+
+    <!-- View Transitions -->
+    <ViewTransitions />
+
+    <style>
+      /* View Transitions 기본 설정 */
+      ::view-transition-old(root),
+      ::view-transition-new(root) {
+        animation: none;
+      }
+
+      /* 메인 콘텐츠 전환 효과 */
+      @keyframes content-in {
+        from {
+          opacity: 0;
+          transform: translateY(20px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes content-out {
+        from {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.98);
+        }
+      }
+
+      ::view-transition-old(main-content) {
+        animation: content-out 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+      }
+
+      ::view-transition-new(main-content) {
+        animation: content-in 0.4s cubic-bezier(0, 0, 0.2, 1) both;
+      }
+
+      /* 포스트 진입/퇴장 특별 효과 */
+      html.to-post ::view-transition-new(main-content) {
+        animation-name: dive-in;
+        animation-duration: 0.5s;
+      }
+
+      html.from-post ::view-transition-old(main-content) {
+        animation-name: dive-out;
+        animation-duration: 0.4s;
+      }
+
+      @keyframes dive-in {
+        from {
+          opacity: 0;
+          transform: scale(0.9) translateY(40px);
+          filter: blur(10px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes dive-out {
+        from {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+          filter: blur(0);
+        }
+        to {
+          opacity: 0;
+          transform: scale(1.05) translateY(-20px);
+          filter: blur(10px);
+        }
+      }
+
+      /* 테마 전환 시 부드러운 효과 */
+      html.dark-toggle * {
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease !important;
+      }
+
+      /* 로딩 인디케이터 */
+      .page-loading-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgb(59 130 246), transparent);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease;
+        z-index: 9999;
+      }
+
+      html.is-loading .page-loading-indicator {
+        transform: scaleX(1);
+      }
+    </style>
   </head>
   <body
-    class="flex min-h-screen flex-col bg-white text-gray-900 antialiased transition-colors dark:bg-gray-950 dark:text-gray-100"
+    class="flex min-h-screen flex-col bg-white text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100"
   >
+    <div class="page-loading-indicator" aria-hidden="true"></div>
+
     <Header />
 
-    <main class="flex-1">
+    <main id="main-content" class="flex-1" transition:name="main-content">
       <slot />
     </main>
 
     <Footer />
+
+    <script>
+      import { themeManager } from '@/lib/theme';
+
+      // 테마 매니저 초기화
+      themeManager.init();
+
+      // View Transitions 이벤트 처리
+      let scrollPositions = new Map<string, number>();
+
+      document.addEventListener('astro:before-preparation', (event) => {
+        // 스크롤 위치 저장
+        const fromPath = window.location.pathname;
+        scrollPositions.set(fromPath, window.scrollY);
+
+        // 페이지 전환 방향 감지
+        const toPath = event.to.pathname;
+        const html = document.documentElement;
+
+        html.classList.remove('to-post', 'from-post');
+
+        if (toPath.includes('/blog/') && !toPath.endsWith('/blog/')) {
+          html.classList.add('to-post');
+        } else if (fromPath.includes('/blog/') && !fromPath.endsWith('/blog/')) {
+          html.classList.add('from-post');
+        }
+
+        html.classList.add('is-loading');
+      });
+
+      document.addEventListener('astro:after-swap', () => {
+        const html = document.documentElement;
+        html.classList.remove('is-loading');
+
+        // 테마 재적용
+        themeManager.applyTheme();
+
+        // 스크롤 위치 복원
+        const currentPath = window.location.pathname;
+        const savedPosition = scrollPositions.get(currentPath);
+
+        if (savedPosition !== undefined) {
+          requestAnimationFrame(() => {
+            window.scrollTo(0, savedPosition);
+          });
+        }
+      });
+
+      document.addEventListener('astro:page-load', () => {
+        // 전환 클래스 정리
+        setTimeout(() => {
+          document.documentElement.classList.remove('to-post', 'from-post');
+        }, 600);
+      });
+    </script>
   </body>
 </html>

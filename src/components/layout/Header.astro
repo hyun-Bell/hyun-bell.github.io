@@ -1,7 +1,6 @@
 ---
 const currentPath = Astro.url.pathname;
 
-// 현재 페이지 확인
 const isActive = (href: string): boolean => {
   if (href === '/') {
     return currentPath === '/';
@@ -11,15 +10,21 @@ const isActive = (href: string): boolean => {
 ---
 
 <header
-  class="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-gray-800 dark:bg-gray-950/95 dark:supports-[backdrop-filter]:bg-gray-950/80"
+  class="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90"
+  transition:persist
 >
   <div class="container">
     <div class="flex h-14 items-center justify-between">
       <!-- Logo -->
-      <a href="/" class="flex items-center">
+      <a href="/" class="logo group flex items-center gap-1" data-astro-prefetch="hover">
         <span class="font-mono text-lg font-bold">
-          <span class="text-primary-500">&gt;</span>
+          <span class="text-primary-500 transition-transform group-hover:translate-x-0.5">&gt;</span
+          >
           <span class="text-gray-900 dark:text-white">_dev</span>
+          <span
+            class="inline-block w-0 overflow-hidden opacity-0 transition-all group-hover:w-2 group-hover:opacity-100"
+            >_</span
+          >
         </span>
       </a>
 
@@ -27,31 +32,34 @@ const isActive = (href: string): boolean => {
       <nav class="flex items-center gap-6">
         <a
           href="/"
-          class={`font-mono text-sm transition-colors ${
+          class={`nav-link relative font-mono text-sm transition-colors ${
             isActive('/')
               ? 'text-primary-600 dark:text-primary-400'
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
           }`}
+          data-astro-prefetch="hover"
         >
           /home
         </a>
         <a
           href="/blog"
-          class={`font-mono text-sm transition-colors ${
+          class={`nav-link relative font-mono text-sm transition-colors ${
             isActive('/blog')
               ? 'text-primary-600 dark:text-primary-400'
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
           }`}
+          data-astro-prefetch="hover"
         >
           /blog
         </a>
         <a
           href="/about"
-          class={`font-mono text-sm transition-colors ${
+          class={`nav-link relative font-mono text-sm transition-colors ${
             isActive('/about')
               ? 'text-primary-600 dark:text-primary-400'
               : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
           }`}
+          data-astro-prefetch="hover"
         >
           /about
         </a>
@@ -60,37 +68,90 @@ const isActive = (href: string): boolean => {
         <button
           id="theme-toggle"
           type="button"
-          class="rounded p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          class="theme-toggle relative h-9 w-9 rounded-md p-2 text-gray-600 transition-transform hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
           aria-label="테마 변경"
         >
-          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              class="hidden dark:block"
-              d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-            <path
-              class="dark:hidden"
-              d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-            ></path>
-          </svg>
+          <div class="relative h-full w-full">
+            <svg
+              class="sun-icon absolute inset-0 h-full w-full rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+              ></path>
+            </svg>
+            <svg
+              class="moon-icon absolute inset-0 h-full w-full rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+            </svg>
+          </div>
         </button>
       </nav>
     </div>
   </div>
 </header>
 
-<script>
-  // Theme toggle
-  const themeToggle = document.getElementById('theme-toggle');
-  themeToggle?.addEventListener('click', () => {
-    const html = document.documentElement;
-    const isDark = html.classList.contains('dark');
+<style>
+  /* 네비게이션 언더라인 효과 */
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background-color: currentColor;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-    if (isDark) {
-      html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+  .nav-link:hover::after {
+    width: 100%;
+  }
+
+  /* 현재 페이지 표시 */
+  .nav-link.text-primary-600::after,
+  .nav-link.dark\:text-primary-400::after {
+    width: 100%;
+  }
+
+  /* 테마 토글 호버 효과 */
+  .theme-toggle:hover {
+    transform: scale(1.05);
+  }
+
+  .theme-toggle:active {
+    transform: scale(0.95);
+  }
+</style>
+
+<script>
+  import { themeManager } from '@/lib/theme';
+
+  document.addEventListener('astro:page-load', () => {
+    const themeToggle = document.getElementById('theme-toggle');
+
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        // View Transition API 사용 가능 시
+        if (document.startViewTransition) {
+          document.documentElement.classList.add('dark-toggle');
+
+          document
+            .startViewTransition(() => {
+              themeManager.toggleTheme();
+            })
+            .finished.then(() => {
+              document.documentElement.classList.remove('dark-toggle');
+            });
+        } else {
+          // 폴백
+          themeManager.toggleTheme();
+        }
+      });
     }
   });
 </script>

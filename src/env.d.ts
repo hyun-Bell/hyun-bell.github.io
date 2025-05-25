@@ -1,6 +1,13 @@
 /// <reference path="../.astro/types.d.ts" />
 /// <reference types="astro/client" />
 
+// Window 타입 확장
+declare global {
+  interface Window {
+    __theme: string;
+  }
+}
+
 interface ImportMetaEnv {
   // Notion API Configuration
   readonly NOTION_TOKEN: string;

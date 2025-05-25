@@ -28,10 +28,15 @@ const recentPosts = sortedPosts.slice(0, 6);
     <div class="space-y-4">
       {
         recentPosts.map((post, index) => (
-          <article class="group">
+          <article
+            class="post-item group"
+            data-post-id={post.data.slug}
+            style={`--delay: ${index * 50}ms`}
+          >
             <a
               href={`/blog/${post.data.slug}`}
-              class="block border-l-2 border-transparent py-4 pl-4 transition-all hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-900/50"
+              class="post-link block border-l-2 border-transparent py-4 pl-4 transition-all hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-900/50"
+              data-astro-prefetch="hover"
             >
               <div class="flex items-start justify-between gap-4">
                 <div class="flex-1">
@@ -42,7 +47,10 @@ const recentPosts = sortedPosts.slice(0, 6);
                     </time>
                     {post.data.readingTime && <span>{post.data.readingTime}min read</span>}
                   </div>
-                  <h2 class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-primary-600 dark:text-gray-100 dark:group-hover:text-primary-400">
+                  <h2
+                    class="mt-1 text-lg font-semibold text-gray-900 group-hover:text-primary-600 dark:text-gray-100 dark:group-hover:text-primary-400"
+                    transition:name={`title-${post.data.slug}`}
+                  >
                     {post.data.title}
                   </h2>
                   {post.data.description && (
@@ -74,6 +82,7 @@ const recentPosts = sortedPosts.slice(0, 6);
           <a
             href="/blog"
             class="inline-flex items-center gap-2 font-mono text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            data-astro-prefetch="hover"
           >
             <span>View all posts</span>
             <span class="text-lg">→</span>
@@ -83,3 +92,48 @@ const recentPosts = sortedPosts.slice(0, 6);
     }
   </div>
 </BaseLayout>
+
+<style>
+  /* 포스트 아이템 초기 로드 애니메이션 */
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .post-item {
+    animation: slide-up 0.5s ease-out both;
+    animation-delay: var(--delay);
+  }
+
+  /* 호버 시 살짝 들어올리기 */
+  .post-link:hover {
+    transform: translateX(4px);
+  }
+
+  /* 클릭 시 포커스 효과 */
+  .post-link:active {
+    transform: translateX(4px) scale(0.99);
+  }
+</style>
+
+<script>
+  // 포스트 클릭 시 전환 준비
+  document.addEventListener('astro:page-load', () => {
+    const postLinks = document.querySelectorAll('.post-link');
+
+    postLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        const postItem = link.closest('.post-item') as HTMLElement;
+        if (postItem) {
+          postItem.style.transformOrigin = 'center center';
+        }
+      });
+    });
+  });
+</script>
