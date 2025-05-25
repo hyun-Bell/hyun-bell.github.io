@@ -15,7 +15,6 @@
     "jsx": "react-jsx",
     "incremental": true,
 
-    // 엄격한 타입 체크 (exactOptionalPropertyTypes 제거)
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,

@@ -44,4 +44,4 @@ coverage/
 # Misc
 .cache/
 .temp/
-.tmp/
+.tmp/.notion-last-update.json
