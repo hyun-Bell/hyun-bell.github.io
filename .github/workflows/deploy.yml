@@ -3,10 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  schedule:
-    # 매일 오전 9시, 오후 1시, 오후 6시에 자동 빌드 (KST)
-    - cron: '0 0,4,9 * * *' # UTC 기준이므로 -9시간
-  workflow_dispatch: # 수동 실행 가능
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,29 +21,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Build site
-        run: pnpm build
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          PUBLIC_SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-          PUBLIC_SITE_TITLE: ${{ secrets.PUBLIC_SITE_TITLE || 'hyunBell Blog' }}
-          PUBLIC_SITE_DESCRIPTION: ${{ secrets.PUBLIC_SITE_DESCRIPTION || 'hyunBell 기술 블로그' }}
-          PUBLIC_AUTHOR_NAME: ${{ secrets.PUBLIC_AUTHOR_NAME || github.repository_owner }}
-          PUBLIC_AUTHOR_EMAIL: ${{ secrets.PUBLIC_AUTHOR_EMAIL || 'entropy1760@gmail.com' }}
+          PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+          PUBLIC_SITE_TITLE: ${{ vars.PUBLIC_SITE_TITLE }}
+          PUBLIC_SITE_DESCRIPTION: ${{ vars.PUBLIC_SITE_DESCRIPTION }}
+          PUBLIC_AUTHOR_NAME: ${{ vars.PUBLIC_AUTHOR_NAME }}
+          PUBLIC_AUTHOR_EMAIL: ${{ vars.PUBLIC_AUTHOR_EMAIL }}
+          PUBLIC_GITHUB_URL: ${{ vars.PUBLIC_GITHUB_URL }}
+        run: pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

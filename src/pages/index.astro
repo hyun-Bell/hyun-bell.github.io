@@ -1,10 +1,13 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PostListItem from '@/components/PostListItem.astro';
-import { getCollection } from 'astro:content';
+import Button from '@/components/ui/Button.astro';
+import { SITE_CONFIG, ROUTES } from '@/lib/constants/site';
 
-const posts = await getCollection('blog');
-const recentPosts = posts
+// 최근 포스트 5개 가져오기
+const allPosts = await getCollection('blog');
+const recentPosts = allPosts
   .filter((post) => post.data.published)
   .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime())
   .slice(0, 5);
@@ -13,39 +16,34 @@ const recentPosts = posts
 <BaseLayout>
   <div class="mx-auto max-w-3xl">
     <!-- Hero Section -->
-    <section class="mb-16 space-y-4 text-center">
-      <h1 class="font-mono text-4xl font-bold sm:text-5xl">
-        <span class="text-blue-600 dark:text-blue-400">Hello</span>, World!
+    <section class="mb-16 text-center">
+      <h1 class="mb-4 font-mono text-4xl font-bold md:text-5xl">
+        <span class="text-blue-600 dark:text-blue-400">_</span>
+        {SITE_CONFIG.title}
       </h1>
-      <p class="text-lg text-gray-600 dark:text-gray-400">
-        개발하며 배운 것들을 기록하는 공간입니다.
+      <p class="mb-8 text-lg text-gray-600 dark:text-gray-400">
+        {SITE_CONFIG.description}
       </p>
-      <div class="flex justify-center gap-4 font-mono text-sm">
-        <a href="/blog" class="text-blue-600 hover:underline dark:text-blue-400"> /blog → </a>
-        <a href="/about" class="text-blue-600 hover:underline dark:text-blue-400"> /about → </a>
+      <div class="flex flex-wrap justify-center gap-4">
+        <Button href={ROUTES.posts}>모든 글 보기</Button>
+        <Button href={ROUTES.about} variant="secondary">About</Button>
       </div>
     </section>
 
     <!-- Recent Posts -->
     <section>
-      <h2 class="mb-8 font-mono text-xl font-semibold text-gray-900 dark:text-gray-100">
-        <span class="text-blue-600 dark:text-blue-400">$</span> recent_posts
+      <h2 class="mb-8 font-mono text-2xl font-bold">
+        <span class="text-gray-400">//</span> 최근 포스트
       </h2>
-
-      <div class="space-y-2">
+      <div class="space-y-4">
         {recentPosts.map((post, index) => <PostListItem post={post} index={index} />)}
       </div>
-
       {
-        posts.length > 5 && (
+        allPosts.length > 5 && (
           <div class="mt-8 text-center">
-            <a
-              href="/blog"
-              class="inline-flex items-center gap-2 font-mono text-sm text-blue-600 hover:underline dark:text-blue-400"
-            >
-              모든 포스트 보기
-              <span>→</span>
-            </a>
+            <Button href={ROUTES.posts} variant="secondary">
+              더 많은 글 보기 →
+            </Button>
           </div>
         )
       }

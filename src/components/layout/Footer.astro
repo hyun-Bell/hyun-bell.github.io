@@ -1,6 +1,7 @@
 ---
+import { SITE_CONFIG } from '@/lib/constants/site';
+
 const currentYear = new Date().getFullYear();
-const githubUrl = import.meta.env.PUBLIC_GITHUB_URL || '#';
 ---
 
 <footer class="mt-auto border-t border-gray-200 dark:border-gray-800">
@@ -8,9 +9,9 @@ const githubUrl = import.meta.env.PUBLIC_GITHUB_URL || '#';
     <div
       class="flex flex-col items-center justify-between gap-4 font-mono text-sm text-gray-600 dark:text-gray-400 sm:flex-row"
     >
-      <p>&copy; {currentYear} dev.blog</p>
+      <p>&copy; {currentYear} {SITE_CONFIG.title}</p>
       <a
-        href={githubUrl}
+        href={SITE_CONFIG.author.github}
         target="_blank"
         rel="noopener noreferrer"
         class="flex items-center gap-2 transition-colors hover:text-gray-900 dark:hover:text-gray-100"

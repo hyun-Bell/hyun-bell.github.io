@@ -3,16 +3,21 @@ import tailwind from '@astrojs/tailwind';
 
 // https://astro.build/config
 export default defineConfig({
+  // GitHub Pages 배포를 위한 설정
+  site: 'https://hyun-Bell.github.io', // 메인 도메인
+  base: '/', // 루트 경로 사용
+
   integrations: [
     tailwind({
       applyBaseStyles: false,
     }),
   ],
-  // 트레일링 슬래시 설정 명시
+
   trailingSlash: 'ignore',
-  // 빌드 설정
+
   build: {
     format: 'directory',
   },
+
   output: 'static',
 });

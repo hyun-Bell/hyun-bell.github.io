@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import PostListItem from '@/components/PostListItem.astro';
 import Pagination from '@/components/blog/Pagination.astro';
-import { SITE_CONSTANTS } from '@/lib/constants';
+import { SITE_CONFIG } from '@/lib/constants/site';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -12,7 +12,7 @@ export async function getStaticPaths() {
     (a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime(),
   );
 
-  const postsPerPage = SITE_CONSTANTS.POSTS_PER_PAGE;
+  const postsPerPage = SITE_CONFIG.postsPerPage;
   const totalPages = Math.ceil(sortedPosts.length / postsPerPage);
 
   return Array.from({ length: totalPages }, (_, i) => {
@@ -35,11 +35,11 @@ export async function getStaticPaths() {
 const { posts, currentPage, totalPages, totalPosts } = Astro.props;
 ---
 
-<BaseLayout title="블로그" description="개발 관련 글들을 모아놓은 공간">
+<BaseLayout title="포스트" description="개발 관련 글들을 모아놓은 공간">
   <div class="mx-auto max-w-3xl">
     <header class="mb-12">
       <h1 class="mb-4 font-mono text-3xl font-bold">
-        <span class="text-blue-600 dark:text-blue-400">~/</span>blog
+        <span class="text-blue-600 dark:text-blue-400">~/</span>posts
       </h1>
       <p class="font-mono text-sm text-gray-600 dark:text-gray-400">
         total: {totalPosts} posts | page: {currentPage}/{totalPages}
@@ -53,7 +53,7 @@ const { posts, currentPage, totalPages, totalPosts } = Astro.props;
     {
       totalPages > 1 && (
         <div class="mt-12">
-          <Pagination currentPage={currentPage} totalPages={totalPages} basePath="/blog" />
+          <Pagination currentPage={currentPage} totalPages={totalPages} basePath="/posts" />
         </div>
       )
     }

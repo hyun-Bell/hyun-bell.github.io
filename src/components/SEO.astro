@@ -1,4 +1,6 @@
 ---
+import { SITE_CONFIG } from '@/lib/constants/site';
+
 export interface Props {
   title?: string;
   description?: string | undefined;
@@ -7,11 +9,18 @@ export interface Props {
   noindex?: boolean;
 }
 
-const { title = 'DevBlog', description, image, type = 'website', noindex = false } = Astro.props;
+const {
+  title = SITE_CONFIG.title,
+  description = SITE_CONFIG.description,
+  image,
+  type = 'website',
+  noindex = false,
+} = Astro.props;
 
-const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://example.com';
-const canonicalUrl = `${siteUrl}${Astro.url.pathname}`;
-const imageUrl = image ? `${siteUrl}${image}` : `${siteUrl}/og-default.png`;
+const canonicalUrl = new URL(Astro.url.pathname, SITE_CONFIG.url).toString();
+const imageUrl = image
+  ? new URL(image, SITE_CONFIG.url).toString()
+  : new URL(SITE_CONFIG.defaultImage, SITE_CONFIG.url).toString();
 ---
 
 <title>{title}</title>
