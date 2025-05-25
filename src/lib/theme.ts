@@ -3,15 +3,23 @@
  * View Transitions와 완벽하게 호환되는 다크모드 시스템
  */
 
+// Window 타입 확장
+declare global {
+  interface Window {
+    __theme: {
+      current: 'light' | 'dark';
+      apply: (theme: 'light' | 'dark') => void;
+      get: () => 'light' | 'dark';
+    };
+  }
+}
+
 export type Theme = 'light' | 'dark';
 
 export class ThemeManager {
   private static instance: ThemeManager;
-  private theme: Theme;
 
-  private constructor() {
-    this.theme = this.getInitialTheme();
-  }
+  private constructor() {}
 
   static getInstance(): ThemeManager {
     if (!ThemeManager.instance) {
@@ -20,68 +28,65 @@ export class ThemeManager {
     return ThemeManager.instance;
   }
 
-  private getInitialTheme(): Theme {
-    // 브라우저 환경 체크
-    if (typeof window === 'undefined') {
-      return 'light';
+  getTheme(): Theme {
+    if (typeof window === 'undefined') return 'light';
+
+    // window.__theme가 있으면 사용, 없으면 localStorage 확인
+    if (window.__theme) {
+      return window.__theme.current;
     }
 
-    // 1. localStorage 확인
     const stored = localStorage.getItem('theme');
     if (stored === 'light' || stored === 'dark') {
       return stored;
     }
 
-    // 2. 시스템 설정 확인
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-
-    return 'light';
-  }
-
-  getTheme(): Theme {
-    return this.theme;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
   setTheme(theme: Theme): void {
-    this.theme = theme;
+    if (typeof window === 'undefined') return;
 
-    // 브라우저 환경에서만 실행
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('theme', theme);
-      this.applyTheme();
+    // localStorage에 저장
+    localStorage.setItem('theme', theme);
+
+    // window.__theme 업데이트
+    if (window.__theme) {
+      window.__theme.current = theme;
+      window.__theme.apply(theme);
+    } else {
+      // fallback
+      this.applyTheme(theme);
     }
   }
 
   toggleTheme(): void {
-    this.setTheme(this.theme === 'light' ? 'dark' : 'light');
+    const currentTheme = this.getTheme();
+    this.setTheme(currentTheme === 'light' ? 'dark' : 'light');
   }
 
-  applyTheme(): void {
-    // 브라우저 환경 체크
-    if (typeof document === 'undefined') return;
-
-    const root = document.documentElement;
-
-    if (this.theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-
-    // 메타 테마 색상도 업데이트
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', this.theme === 'dark' ? '#030712' : '#ffffff');
-    }
-  }
-
-  // 초기화 (페이지 로드 시 실행)
-  init(): void {
-    // 브라우저 환경 체크
+  applyTheme(theme?: Theme): void {
     if (typeof window === 'undefined') return;
 
+    const themeToApply = theme || this.getTheme();
+
+    if (window.__theme) {
+      window.__theme.apply(themeToApply);
+    } else {
+      // fallback
+      const root = document.documentElement;
+      if (themeToApply === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+  }
+
+  init(): void {
+    if (typeof window === 'undefined') return;
+
+    // 초기 테마 적용
     this.applyTheme();
 
     // 시스템 테마 변경 감지
@@ -89,8 +94,8 @@ export class ThemeManager {
     mediaQuery.addEventListener('change', (e) => {
       // localStorage에 저장된 값이 없을 때만 시스템 설정 따르기
       if (!localStorage.getItem('theme')) {
-        this.theme = e.matches ? 'dark' : 'light';
-        this.applyTheme();
+        const newTheme = e.matches ? 'dark' : 'light';
+        this.setTheme(newTheme);
       }
     });
   }
