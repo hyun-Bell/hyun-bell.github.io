@@ -59,11 +59,12 @@ export default [
         CustomEvent: 'readonly',
         requestAnimationFrame: 'readonly',
         cancelAnimationFrame: 'readonly',
+        URL: 'readonly', // 추가
       },
     },
   },
 
-  // TypeScript 파일 설정 (type-aware rules 제외)
+  // TypeScript 파일 설정
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
@@ -77,14 +78,11 @@ export default [
       '@typescript-eslint': typescript,
     },
     rules: {
-      // 기본 TypeScript 규칙
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-
-      // JavaScript 규칙
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'prefer-const': 'error',
-      'no-unused-vars': 'off', // TypeScript 규칙으로 대체
+      'no-unused-vars': 'off',
     },
   },
 

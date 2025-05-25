@@ -15,14 +15,13 @@
     "jsx": "react-jsx",
     "incremental": true,
 
-    // 엄격한 타입 체크
+    // 엄격한 타입 체크 (exactOptionalPropertyTypes 제거)
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "allowUnreachableCode": false,
-    "exactOptionalPropertyTypes": true,
 
     // 경로 별칭
     "baseUrl": ".",

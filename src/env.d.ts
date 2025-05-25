@@ -4,7 +4,11 @@
 // Window 타입 확장
 declare global {
   interface Window {
-    __theme: string;
+    __theme: {
+      current: 'light' | 'dark';
+      apply: (theme: 'light' | 'dark') => void;
+      get: () => 'light' | 'dark';
+    };
   }
 }
 
@@ -36,3 +40,5 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+export {};
