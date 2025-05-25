@@ -1,11 +1,14 @@
 name: Scheduled Content Update
 
 on:
-  # 매 시간마다 실행
+  # 매일 오전 9시, 오후 11시 (KST) 실행
   schedule:
-    - cron: '0 * * * *' # 매시 정각
+    - cron: '0 0 * * *' # UTC 0시 = KST 오전 9시
+    - cron: '0 14 * * *' # UTC 14시 = KST 오후 11시
+
   # 수동 실행 가능
   workflow_dispatch:
+
   # Notion 콘텐츠 업데이트 시 수동 트리거용
   repository_dispatch:
     types: [content-update]
@@ -21,8 +24,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -35,7 +36,10 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          pnpm install
+          # dotenv 설치 (스크립트 실행용)
+          pnpm add -D dotenv
 
       - name: Check Notion updates
         id: check-updates
@@ -43,7 +47,20 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
-          node scripts/check-notion-updates.js
+          # 스크립트 실행 및 결과 캡처
+          OUTPUT=$(node scripts/check-notion-updates.js)
+          echo "$OUTPUT"
+
+          # GitHub Actions 새로운 출력 방식
+          if echo "$OUTPUT" | grep -q "Updates detected"; then
+            echo "has_updates=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_updates=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Clear cache if updated
+        if: steps.check-updates.outputs.has_updates == 'true'
+        run: pnpm cache:clear
 
       - name: Build if updated
         if: steps.check-updates.outputs.has_updates == 'true'
@@ -56,8 +73,13 @@ jobs:
           PUBLIC_AUTHOR_NAME: ${{ vars.PUBLIC_AUTHOR_NAME }}
           PUBLIC_AUTHOR_EMAIL: ${{ vars.PUBLIC_AUTHOR_EMAIL }}
           PUBLIC_GITHUB_URL: ${{ vars.PUBLIC_GITHUB_URL }}
-        run: |
-          pnpm build
+        run: pnpm build
+
+      - name: Upload artifact
+        if: steps.check-updates.outputs.has_updates == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
 
       - name: Deploy
         if: steps.check-updates.outputs.has_updates == 'true'

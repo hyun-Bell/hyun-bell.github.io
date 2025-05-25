@@ -17,7 +17,8 @@
     "type-check": "astro check && tsc --noEmit",
     "clean": "rimraf dist .astro node_modules/.cache",
     "cache:clear": "node scripts/clear-cache.js",
-    "notion:check": "node scripts/check-notion-properties.js"
+    "notion:check": "node scripts/check-notion-properties.js",
+    "check:updates": "node scripts/check-notion-updates.js"
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [
