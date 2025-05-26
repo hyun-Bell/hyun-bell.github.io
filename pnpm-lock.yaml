@@ -26,6 +26,9 @@ importers:
       '@notionhq/client':
         specifier: ^3.1.2
         version: 3.1.2
+      '@types/prismjs':
+        specifier: ^1.26.5
+        version: 1.26.5
       astro:
         specifier: ^5.8.0
         version: 5.8.0(@types/node@22.15.21)(jiti@1.21.7)(rollup@4.41.1)(typescript@5.8.3)(yaml@2.8.0)
@@ -41,6 +44,9 @@ importers:
       notion-to-md:
         specifier: ^3.1.9
         version: 3.1.9
+      prismjs:
+        specifier: ^1.30.0
+        version: 1.30.0
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -1107,6 +1113,9 @@ packages:
 
   '@types/node@22.15.21':
     resolution: {integrity: sha512-EV/37Td6c+MgKAbkcLG6vqZ2zEYHD7bvSrzqqs2RIhbA6w3x+Dqz8MZM3sP6kGTeLrdoOgKZe+Xja7tUB2DNkQ==}
+
+  '@types/prismjs@1.26.5':
+    resolution: {integrity: sha512-AUZTa7hQ2KY5L7AmtSiqxlhWxb4ina0yd8hNbl4TWuqnv/pFP0nDMb3YrfSBf4hJVGLh2YEIBfKaBW/9UEl6IQ==}
 
   '@types/react-dom@19.1.5':
     resolution: {integrity: sha512-CMCjrWucUBZvohgZxkjd6S9h0nZxXjzus6yDfUb+xLxYM7VvjKNH1tQrE9GWLql1XoOP4/Ds3bwFqShHUYraGg==}
@@ -5083,6 +5092,8 @@ snapshots:
   '@types/node@22.15.21':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/prismjs@1.26.5': {}
 
   '@types/react-dom@19.1.5(@types/react@19.1.5)':
     dependencies:
