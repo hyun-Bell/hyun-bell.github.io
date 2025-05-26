@@ -16,13 +16,11 @@ interface ViewTransition {
 // Window 타입 확장
 declare global {
   interface Window {
-    __currentTheme: 'light' | 'dark';
-    __themeController: {
+    __theme: {
       getTheme: () => 'light' | 'dark';
-      setTheme: (theme: 'light' | 'dark') => void;
-      toggleTheme: () => void;
-      applyTheme: () => void;
+      toggle: () => void;
       init: () => void;
+      reinit: () => void;
       cleanup: () => void;
     };
   }

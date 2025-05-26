@@ -36,17 +36,6 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
     <!-- 테마 스크립트 (FOUC 방지) -->
     <ThemeScript />
 
-    <!-- Critical CSS for preventing flicker -->
-    <style is:inline>
-      /* 플리커링 방지를 위한 크리티컬 CSS */
-      html {
-        color-scheme: light;
-      }
-      html.dark {
-        color-scheme: dark;
-      }
-    </style>
-
     <!-- SEO -->
     <SEO title={pageTitle} description={description} image={image} type={type} />
 
@@ -58,118 +47,89 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
       rel="stylesheet"
     />
 
-    <!-- ClientRouter -->
+    <!-- ViewTransitions -->
     <ClientRouter />
   </head>
   <body>
+    <!-- 전체 컨테이너 -->
     <div
       class="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100"
+      transition:name="app-container"
     >
-      <Header />
+      <!-- 헤더 -->
+      <Header transition:persist />
 
+      <!-- 메인 컨텐츠 -->
       <main class="container mx-auto flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <slot />
       </main>
 
-      <Footer />
+      <!-- 푸터 -->
+      <Footer transition:persist />
     </div>
 
     <script>
-      import { themeManager } from '@/lib/theme-manager';
+      import { theme } from '@/lib/theme';
 
-      // 초기 로드 처리
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          themeManager.init();
-        });
-      } else {
-        themeManager.init();
+      // View Transitions API 지원 확인
+      const supportsViewTransitions = 'startViewTransition' in document;
+
+      if (!supportsViewTransitions) {
+        console.warn('View Transitions API not supported, using fallback navigation');
       }
 
-      // View Transitions 이벤트
-      document.addEventListener('astro:page-load', () => {
-        themeManager.reinit();
+      // 스크롤 위치 관리
+      const scrollPositions = new Map<string, number>();
+
+      // 초기화
+      document.addEventListener('DOMContentLoaded', () => {
+        theme.init();
       });
 
-      // View Transitions 중 테마 유지
-      document.addEventListener('astro:before-swap', (event) => {
-        const isDark = document.documentElement.classList.contains('dark');
-        if (isDark && event.newDocument) {
-          event.newDocument.documentElement.classList.add('dark');
-        }
-      });
+      // View Transitions 이벤트 핸들링
+      if (supportsViewTransitions) {
+        // 페이지 전환 전 - 현재 상태 저장
+        document.addEventListener('astro:before-preparation', () => {
+          const url = window.location.pathname;
+          scrollPositions.set(url, window.scrollY);
+        });
+
+        // DOM 교체 전 - 테마 상태 유지
+        document.addEventListener('astro:before-swap', (event: any) => {
+          const isDark = document.documentElement.classList.contains('dark');
+          if (isDark && event.newDocument) {
+            event.newDocument.documentElement.classList.add('dark');
+          }
+        });
+
+        // 페이지 로드 완료 - 스크롤 복원 및 테마 재초기화
+        document.addEventListener('astro:page-load', () => {
+          // 테마 버튼 재연결
+          theme.reinit();
+
+          // 뒤로가기인 경우 스크롤 위치 복원
+          const currentUrl = window.location.pathname;
+          const savedPosition = scrollPositions.get(currentUrl);
+
+          // @ts-ignore - history.state 타입 정의 없음
+          if (savedPosition !== undefined && history.state?.index < history.state?.previousIndex) {
+            // 부드러운 스크롤 복원
+            requestAnimationFrame(() => {
+              window.scrollTo({
+                top: savedPosition,
+                behavior: 'instant',
+              });
+            });
+          }
+        });
+      }
+
+      // 테마 변경 이벤트 로깅 (개발용)
+      if (import.meta.env.DEV) {
+        window.addEventListener('theme-changed', (event: any) => {
+          console.log('[Theme] Changed to:', event.detail.theme);
+        });
+      }
     </script>
   </body>
 </html>
-
-<style is:global>
-  /* View Transitions 애니메이션 */
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-  }
-
-  @keyframes fade-out {
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes slide-from-right {
-    from {
-      transform: translateX(30px);
-    }
-  }
-
-  @keyframes slide-to-left {
-    to {
-      transform: translateX(-30px);
-    }
-  }
-
-  /* 기본 페이지 전환 애니메이션 */
-  ::view-transition-old(root) {
-    animation:
-      150ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
-      300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
-  }
-
-  ::view-transition-new(root) {
-    animation:
-      150ms cubic-bezier(0, 0, 0.2, 1) 150ms both fade-in,
-      300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
-  }
-
-  /* 포스트 제목 전환 - 겹침 방지 */
-  ::view-transition-old(post-*) {
-    animation: 200ms ease-out forwards fade-out;
-  }
-
-  ::view-transition-new(post-*) {
-    animation: 200ms ease-out forwards fade-in;
-  }
-
-  /* View Transition 그룹 */
-  ::view-transition-group(post-*) {
-    isolation: isolate;
-  }
-
-  /* View Transition 이미지 페어 */
-  ::view-transition-image-pair(post-*) {
-    isolation: isolate;
-  }
-
-  /* 모든 transition name에 대한 기본 설정 */
-  [style*='view-transition-name'] {
-    contain: layout;
-  }
-
-  /* prefers-reduced-motion 지원 */
-  @media (prefers-reduced-motion: reduce) {
-    ::view-transition-old(*),
-    ::view-transition-new(*) {
-      animation-duration: 0.01ms !important;
-    }
-  }
-</style>

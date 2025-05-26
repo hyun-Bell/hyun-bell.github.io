@@ -6,43 +6,11 @@
   /* 색상 스키마 설정 */
   :root {
     color-scheme: light;
+    --theme-transition-duration: 0s;
   }
 
   :root.dark {
     color-scheme: dark;
-  }
-
-  /* 기본적으로 transition 비활성화 */
-  * {
-    transition: none;
-  }
-
-  /* 특정 요소만 transition 활성화 */
-  .nav-link,
-  button:not([data-no-transition]),
-  a:not([data-no-transition]) {
-    transition:
-      color 0.15s ease,
-      background-color 0.15s ease;
-  }
-
-  /* 테마 전환 시에만 전체 transition 활성화 */
-  .theme-transition * {
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      color 0.3s ease !important;
-  }
-
-  /* View Transitions 중에는 color transition 비활성화 */
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    transition: none !important;
-  }
-
-  /* View Transitions를 위한 contain 설정 */
-  [transition\:name] {
-    contain: layout style;
   }
 
   /* 폰트 스무딩 */
@@ -55,6 +23,32 @@
   /* 포커스 스타일 */
   :focus-visible {
     @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950;
+  }
+
+  /* 스크롤바 스타일 */
+  @supports (scrollbar-width: thin) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: theme('colors.gray.400') transparent;
+    }
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 dark:bg-gray-600;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500 dark:bg-gray-500;
   }
 }
 
@@ -70,17 +64,130 @@
   }
 }
 
-/* View Transitions 디버깅 (개발 중에만 사용) */
 @layer utilities {
-  .debug-view-transitions ::view-transition-group(*) {
-    border: 2px solid red;
+  /* 테마 전환 애니메이션 */
+  body,
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-900,
+  .bg-gray-950,
+  .border-gray-200,
+  .border-gray-800,
+  .text-gray-900,
+  .text-gray-100 {
+    transition:
+      background-color var(--theme-transition-duration) ease,
+      border-color var(--theme-transition-duration) ease,
+      color var(--theme-transition-duration) ease;
   }
 
-  .debug-view-transitions ::view-transition-old(*) {
-    border: 2px solid blue;
+  /* 헤더/푸터 안정화 */
+  [transition\:persist] {
+    contain: size layout style;
+    will-change: auto;
   }
 
-  .debug-view-transitions ::view-transition-new(*) {
-    border: 2px solid green;
+  /* 메인 컨텐츠 전환 최적화 */
+  main {
+    isolation: isolate;
+    transform: translateZ(0);
   }
+}
+
+/* View Transitions 애니메이션 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    transform: translateX(30px);
+  }
+}
+
+@keyframes slide-to-left {
+  to {
+    transform: translateX(-30px);
+  }
+}
+
+/* 페이지 전환 애니메이션 */
+::view-transition-old(root) {
+  animation:
+    150ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+}
+
+::view-transition-new(root) {
+  animation:
+    150ms cubic-bezier(0, 0, 0.2, 1) 150ms both fade-in,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
+}
+
+/* 헤더/푸터는 애니메이션 없이 유지 */
+::view-transition-group(site-header),
+::view-transition-group(site-footer) {
+  animation: none !important;
+}
+
+/* 포스트 제목 모프 애니메이션 */
+::view-transition-group(post-title-*) {
+  animation-duration: 0.4s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* View Transitions 최적화 */
+@supports (view-transition-name: test) {
+  /* contain 속성으로 레이아웃 안정성 확보 */
+  [style*='view-transition-name'] {
+    contain: layout style paint;
+  }
+
+  /* GPU 가속 힌트 */
+  ::view-transition-group(*) {
+    will-change: transform, opacity;
+  }
+}
+
+/* prefers-reduced-motion 지원 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+header,
+footer {
+  /* 레이아웃 시프트 방지 */
+  contain: layout style;
+  /* 백페이스 가시성 */
+  backface-visibility: hidden;
+  /* 3D 변환 컨텍스트 */
+  transform: translateZ(0);
+}
+
+/* View Transition 중 배경색 유지 */
+::view-transition-old(app-container),
+::view-transition-new(app-container) {
+  /* 배경색 상속 */
+  background: inherit;
+}
+
+/* 블로그 상세 페이지 전환 최적화 */
+.astro-route-announcer ~ * header,
+.astro-route-announcer ~ * footer {
+  /* 강제로 하드웨어 가속 */
+  will-change: transform;
+  transform: translateZ(0);
 }

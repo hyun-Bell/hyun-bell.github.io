@@ -31,59 +31,191 @@ const htmlContent = parseNotionMarkdown(content);
 <BaseLayout title={data.title} description={data.description} type="article">
   <ReadingProgress />
 
-  <article class="mx-auto max-w-3xl">
-    <header class="mb-12 text-center">
-      <div class="mb-4 font-mono text-sm text-gray-500 dark:text-gray-500">
-        <time datetime={data.publishDate.toISOString()}>
-          {formatDate(data.publishDate)}
-        </time>
+  <!-- article을 감싸는 wrapper 추가 -->
+  <div transition:animate="fade">
+    <article class="mx-auto max-w-3xl">
+      <header class="mb-12 text-center">
+        <div class="mb-4 font-mono text-sm text-gray-500 dark:text-gray-500">
+          <time datetime={data.publishDate.toISOString()}>
+            {formatDate(data.publishDate)}
+          </time>
+          {
+            data.readingTime && (
+              <>
+                <span class="mx-2">•</span>
+                <span>{data.readingTime}min read</span>
+              </>
+            )
+          }
+        </div>
+
+        <h1
+          class="mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl"
+          transition:name={`post-title-${data.slug}`}
+        >
+          {data.title}
+        </h1>
+
         {
-          data.readingTime && (
-            <>
-              <span class="mx-2">•</span>
-              <span>{data.readingTime}min read</span>
-            </>
+          data.tags.length > 0 && (
+            <div class="flex flex-wrap justify-center gap-2">
+              {data.tags.map((tag) => (
+                <span class="font-mono text-sm text-gray-500 dark:text-gray-500">#{tag}</span>
+              ))}
+            </div>
           )
         }
-      </div>
+      </header>
 
-      <h1
-        class="post-detail-title mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl"
-        transition:name={`post-${data.slug}`}
-      >
-        {data.title}
-      </h1>
+      <div class="blog-content" set:html={htmlContent} />
 
-      {
-        data.tags.length > 0 && (
-          <div class="flex flex-wrap justify-center gap-2">
-            {data.tags.map((tag) => (
-              <span class="font-mono text-sm text-gray-500 dark:text-gray-500">#{tag}</span>
-            ))}
-          </div>
-        )
-      }
-    </header>
-
-    <div class="blog-content" set:html={htmlContent} />
-
-    <footer class="mt-16 border-t border-gray-200 pt-8 dark:border-gray-800">
-      <a
-        href="/posts"
-        class="inline-flex items-center gap-2 font-mono text-sm text-blue-600 hover:underline dark:text-blue-400"
-      >
-        <span>←</span>
-        back to list
-      </a>
-    </footer>
-  </article>
+      <footer class="mt-16 border-t border-gray-200 pt-8 dark:border-gray-800">
+        <a
+          href="/posts"
+          class="inline-flex items-center gap-2 font-mono text-sm text-blue-600 hover:underline dark:text-blue-400"
+        >
+          <span>←</span>
+          back to list
+        </a>
+      </footer>
+    </article>
+  </div>
 </BaseLayout>
 
 <style>
-  /* 포스트 상세 제목 스타일 */
-  .post-detail-title {
-    display: block;
+  /* 포스트 상세 페이지 전용 스타일 */
+  article {
+    /* 부드러운 나타남 효과 */
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* 제목 스타일 */
+  h1 {
+    /* 긴 제목도 잘 보이도록 */
+    word-break: keep-all;
+    line-height: 1.3;
+  }
+
+  /* 태그 호버 효과 */
+  header span[class*='text-gray-500']:hover {
+    @apply text-gray-700 dark:text-gray-300;
+    cursor: default;
+  }
+
+  /* 뒤로가기 링크 스타일 */
+  footer a {
+    position: relative;
+    padding-bottom: 1px;
+  }
+
+  footer a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 1px;
+    @apply bg-blue-600 dark:bg-blue-400;
+    transition: width 0.2s ease;
+  }
+
+  footer a:hover::after {
     width: 100%;
-    line-height: 1.2;
+  }
+
+  /* View Transitions 활성 시 애니메이션 비활성화 */
+  @supports (view-transition-name: test) {
+    .astro-route-announcer ~ * article {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  // 코드 블록 복사 기능
+  document.addEventListener('astro:page-load', () => {
+    const codeBlocks = document.querySelectorAll('pre[class*="language-"]');
+
+    codeBlocks.forEach((block) => {
+      // 복사 버튼 추가
+      const button = document.createElement('button');
+      button.className = 'copy-code-button';
+      button.textContent = 'Copy';
+      button.setAttribute('aria-label', 'Copy code to clipboard');
+
+      // 버튼 스타일
+      Object.assign(button.style, {
+        position: 'absolute',
+        top: '8px',
+        right: '8px',
+        padding: '4px 8px',
+        fontSize: '12px',
+        borderRadius: '4px',
+        border: 'none',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        color: '#fff',
+        cursor: 'pointer',
+        opacity: '0',
+        transition: 'opacity 0.2s',
+      });
+
+      // 호버 시 버튼 표시
+      (block as HTMLElement).style.position = 'relative';
+      block.addEventListener('mouseenter', () => {
+        button.style.opacity = '1';
+      });
+      block.addEventListener('mouseleave', () => {
+        button.style.opacity = '0';
+      });
+
+      // 복사 기능
+      button.addEventListener('click', async () => {
+        const code = block.textContent || '';
+
+        try {
+          await navigator.clipboard.writeText(code);
+          button.textContent = 'Copied!';
+          setTimeout(() => {
+            button.textContent = 'Copy';
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+          button.textContent = 'Error';
+        }
+      });
+
+      block.appendChild(button);
+    });
+  });
+</script>
+
+<style is:global>
+  /* 코드 복사 버튼 hover 스타일 */
+  .copy-code-button:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  .copy-code-button:active {
+    transform: scale(0.95);
+  }
+
+  /* 다크 모드에서 코드 블록 버튼 */
+  :root.dark .copy-code-button {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  :root.dark .copy-code-button:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
   }
 </style>
