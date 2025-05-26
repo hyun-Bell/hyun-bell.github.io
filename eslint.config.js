@@ -54,10 +54,12 @@ export default [
         location: 'readonly',
         history: 'readonly',
         HTMLElement: 'readonly',
-        HTMLButtonElement: 'readonly', // 추가
+        HTMLButtonElement: 'readonly',
         Element: 'readonly',
         Event: 'readonly',
         CustomEvent: 'readonly',
+        MediaQueryList: 'readonly',
+        MediaQueryListEvent: 'readonly',
         requestAnimationFrame: 'readonly',
         cancelAnimationFrame: 'readonly',
         URL: 'readonly',

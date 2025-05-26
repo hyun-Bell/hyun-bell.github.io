@@ -3,26 +3,53 @@
 @tailwind utilities;
 
 @layer base {
-  /* 다크모드 기본 설정 */
+  /* 색상 스키마 설정 */
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
   }
 
+  :root.dark {
+    color-scheme: dark;
+  }
+
+  /* 기본적으로 transition 비활성화 */
   * {
-    @apply transition-colors duration-200;
+    transition: none;
   }
 
-  /* 코드 블록 애니메이션 제외 */
-  pre,
-  pre *,
-  code {
+  /* 특정 요소만 transition 활성화 */
+  .nav-link,
+  button:not([data-no-transition]),
+  a:not([data-no-transition]) {
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+  }
+
+  /* 테마 전환 시에만 전체 transition 활성화 */
+  .theme-transition * {
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease !important;
+  }
+
+  /* View Transitions 중에는 color transition 비활성화 */
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     transition: none !important;
+  }
+
+  /* View Transitions를 위한 contain 설정 */
+  [transition\:name] {
+    contain: layout style;
   }
 
   /* 폰트 스무딩 */
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   /* 포커스 스타일 */
@@ -43,9 +70,17 @@
   }
 }
 
+/* View Transitions 디버깅 (개발 중에만 사용) */
 @layer utilities {
-  /* 커스텀 유틸리티 */
-  .text-balance {
-    text-wrap: balance;
+  .debug-view-transitions ::view-transition-group(*) {
+    border: 2px solid red;
+  }
+
+  .debug-view-transitions ::view-transition-old(*) {
+    border: 2px solid blue;
+  }
+
+  .debug-view-transitions ::view-transition-new(*) {
+    border: 2px solid green;
   }
 }

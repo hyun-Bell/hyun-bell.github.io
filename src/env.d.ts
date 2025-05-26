@@ -1,6 +1,18 @@
 /// <reference path="../.astro/types.d.ts" />
 /// <reference types="astro/client" />
 
+// View Transitions API 타입 정의
+interface Document {
+  startViewTransition?: (callback: () => void | Promise<void>) => ViewTransition;
+}
+
+interface ViewTransition {
+  finished: Promise<void>;
+  ready: Promise<void>;
+  updateCallbackDone: Promise<void>;
+  skipTransition(): void;
+}
+
 // Window 타입 확장
 declare global {
   interface Window {
@@ -11,7 +23,7 @@ declare global {
       toggleTheme: () => void;
       applyTheme: () => void;
       init: () => void;
-      reinitialize: () => void;
+      cleanup: () => void;
     };
   }
 }

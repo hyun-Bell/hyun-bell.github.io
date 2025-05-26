@@ -1,23 +1,19 @@
 ---
 import { SITE_CONFIG, NAV_ITEMS } from '@/lib/constants/site';
-
-const currentPath = Astro.url.pathname;
-
-const isActive = (href: string) => {
-  if (href === '/') return currentPath === '/';
-  return currentPath.startsWith(href);
-};
 ---
 
 <header
   class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-lg dark:border-gray-800 dark:bg-gray-950/80"
+  transition:persist
 >
   <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex h-16 items-center justify-between">
       <!-- Logo -->
       <a href="/" class="flex items-center space-x-2 font-mono">
         <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">_</span>
-        <span class="text-lg font-semibold">{SITE_CONFIG.title}</span>
+        <span class="text-lg font-semibold text-gray-900 dark:text-gray-100"
+          >{SITE_CONFIG.title}</span
+        >
       </a>
 
       <!-- Navigation -->
@@ -26,11 +22,8 @@ const isActive = (href: string) => {
           NAV_ITEMS.map((item) => (
             <a
               href={item.href}
-              class={`font-mono text-sm transition-colors ${
-                isActive(item.href)
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100'
-              } `}
+              class="nav-link font-mono text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              data-nav-item={item.href}
             >
               /{item.label.toLowerCase()}
             </a>
@@ -41,23 +34,15 @@ const isActive = (href: string) => {
         <button
           id="theme-toggle"
           type="button"
-          class="relative h-9 w-9 rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+          class="relative h-9 w-9 rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
           aria-label="테마 변경"
         >
-          <svg
-            class="absolute inset-2 h-5 w-5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
+          <svg class="sun-icon absolute inset-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
             <path
               d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
             ></path>
           </svg>
-          <svg
-            class="absolute inset-2 h-5 w-5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
+          <svg class="moon-icon absolute inset-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
           </svg>
         </button>
@@ -65,3 +50,61 @@ const isActive = (href: string) => {
     </div>
   </div>
 </header>
+
+<style>
+  /* Active 상태 스타일 */
+  .nav-link {
+    position: relative;
+  }
+
+  .nav-link.active {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+
+  /* 테마 아이콘 애니메이션 */
+  .sun-icon,
+  .moon-icon {
+    transition:
+      transform 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .sun-icon {
+    @apply rotate-0 scale-100 opacity-100;
+  }
+
+  .moon-icon {
+    @apply rotate-90 scale-0 opacity-0;
+  }
+
+  :global(.dark) .sun-icon {
+    @apply -rotate-90 scale-0 opacity-0;
+  }
+
+  :global(.dark) .moon-icon {
+    @apply rotate-0 scale-100 opacity-100;
+  }
+</style>
+
+<script>
+  // 네비게이션 활성화 상태 관리
+  function updateActiveNav() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('[data-nav-item]');
+
+    navLinks.forEach((link) => {
+      const href = link.getAttribute('data-nav-item');
+      if (!href) return;
+
+      const isActive = href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+
+      link.classList.toggle('active', isActive);
+    });
+  }
+
+  // 초기 로드
+  updateActiveNav();
+
+  // View Transitions 후 업데이트
+  document.addEventListener('astro:page-load', updateActiveNav);
+</script>

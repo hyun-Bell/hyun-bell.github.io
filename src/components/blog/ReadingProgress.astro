@@ -1,16 +1,14 @@
----
-// 읽기 진행률 표시 바
----
-
 <div
   id="reading-progress"
   class="fixed left-0 top-0 z-50 h-0.5 w-0 bg-primary-500 transition-all duration-150"
   aria-hidden="true"
+  transition:persist
 >
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  // View Transitions 대응 스크립트
+  function initReadingProgress() {
     const progressBar = document.getElementById('reading-progress');
     if (!progressBar) return;
 
@@ -34,10 +32,19 @@
       }
     };
 
+    window.removeEventListener('scroll', handleScroll);
+    window.removeEventListener('resize', updateProgress);
+
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('resize', updateProgress);
 
     // 초기 진행률 설정
     updateProgress();
-  });
+  }
+
+  // 페이지 로드 시 초기화
+  document.addEventListener('astro:page-load', initReadingProgress);
+
+  // 초기 로드
+  initReadingProgress();
 </script>

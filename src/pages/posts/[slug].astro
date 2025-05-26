@@ -48,7 +48,7 @@ const htmlContent = parseNotionMarkdown(content);
       </div>
 
       <h1
-        class="mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl"
+        class="post-detail-title mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl"
         transition:name={`post-${data.slug}`}
       >
         {data.title}
@@ -78,3 +78,12 @@ const htmlContent = parseNotionMarkdown(content);
     </footer>
   </article>
 </BaseLayout>
+
+<style>
+  /* 포스트 상세 제목 스타일 */
+  .post-detail-title {
+    display: block;
+    width: 100%;
+    line-height: 1.2;
+  }
+</style>

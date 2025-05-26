@@ -16,6 +16,7 @@ export default defineConfig({
 
   build: {
     format: 'directory',
+    inlineStylesheets: 'auto',
   },
 
   output: 'static',

@@ -1,6 +1,6 @@
 /**
  * 통합 테마 컨트롤러
- * View Transitions와 완벽하게 호환되는 테마 시스템
+ * View Transitions ClientRouter와 완벽하게 호환되는 테마 시스템
  */
 
 export type Theme = 'light' | 'dark';
@@ -8,7 +8,6 @@ export type Theme = 'light' | 'dark';
 class ThemeController {
   private static instance: ThemeController;
   private currentTheme: Theme;
-  private initialized = false;
 
   private constructor() {
     this.currentTheme = this.getStoredTheme() || this.getSystemTheme();
@@ -79,16 +78,25 @@ class ThemeController {
     } else {
       root.classList.remove('dark');
     }
+
+    // 메타 테마 컬러 업데이트
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', this.currentTheme === 'dark' ? '#0f172a' : '#ffffff');
+    }
   }
 
   /**
    * 테마 초기화 및 이벤트 리스너 설정
    */
   init(): void {
-    if (typeof window === 'undefined' || this.initialized) return;
+    if (typeof window === 'undefined') return;
 
     // 초기 테마 적용
     this.applyTheme();
+
+    // 테마 토글 버튼 이벤트 설정
+    this.setupThemeToggle();
 
     // 시스템 테마 변경 감지
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -98,11 +106,6 @@ class ThemeController {
         this.applyTheme();
       }
     });
-
-    // 테마 토글 버튼 이벤트 설정
-    this.setupThemeToggle();
-
-    this.initialized = true;
   }
 
   /**
@@ -112,12 +115,8 @@ class ThemeController {
     const button = document.getElementById('theme-toggle');
     if (!button) return;
 
-    // 기존 리스너 제거 (중복 방지)
-    const newButton = button.cloneNode(true) as HTMLButtonElement;
-    button.parentNode?.replaceChild(newButton, button);
-
-    // 새 리스너 추가
-    newButton.addEventListener('click', () => {
+    // 클릭 이벤트 추가
+    button.addEventListener('click', () => {
       this.toggleTheme();
     });
   }
@@ -133,7 +132,7 @@ class ThemeController {
 // 전역 인스턴스
 export const themeController = ThemeController.getInstance();
 
-// 전역 노출 (초기 스크립트용)
+// 전역 노출
 if (typeof window !== 'undefined') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).__themeController = themeController;
