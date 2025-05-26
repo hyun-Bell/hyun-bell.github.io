@@ -1,15 +1,16 @@
 ---
-// 테마 스크립트 - FOUC 방지 및 상태 유지
+// 테마 초기화 스크립트 - FOUC 방지
 ---
 
 <script is:inline>
   // 즉시 실행 함수로 초기 테마 적용
   (function () {
-    const getTheme = () => {
+    const getStoredTheme = () => {
       const stored = localStorage.getItem('theme');
-      if (stored === 'light' || stored === 'dark') {
-        return stored;
-      }
+      return stored === 'light' || stored === 'dark' ? stored : null;
+    };
+
+    const getSystemTheme = () => {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     };
 
@@ -23,14 +24,10 @@
     };
 
     // 초기 테마 적용
-    const theme = getTheme();
+    const theme = getStoredTheme() || getSystemTheme();
     applyTheme(theme);
 
-    // 전역 객체에 테마 관련 함수 노출 (View Transitions 용)
-    window.__theme = {
-      current: theme,
-      apply: applyTheme,
-      get: getTheme,
-    };
+    // 전역 객체에 현재 테마 저장
+    window.__currentTheme = theme;
   })();
 </script>

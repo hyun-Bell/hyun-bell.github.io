@@ -65,22 +65,3 @@ const isActive = (href: string) => {
     </div>
   </div>
 </header>
-
-<script>
-  import { themeManager } from '@/lib/theme';
-
-  function initThemeToggle() {
-    const themeToggle = document.getElementById('theme-toggle');
-    if (!themeToggle) return;
-
-    themeToggle.addEventListener('click', () => {
-      themeManager.toggleTheme();
-    });
-  }
-
-  // 초기화
-  initThemeToggle();
-
-  // View Transitions 후 재초기화
-  document.addEventListener('astro:page-load', initThemeToggle);
-</script>

@@ -64,14 +64,21 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
     </div>
 
     <script>
-      import { themeManager } from '@/lib/theme';
+      import { themeController } from '@/lib/theme-controller';
 
-      // 테마 초기화
-      themeManager.init();
+      // 페이지 로드 시 초기화
+      document.addEventListener('DOMContentLoaded', () => {
+        themeController.init();
+      });
 
-      // View Transitions 시 테마 유지
+      // View Transitions 이벤트 처리
+      document.addEventListener('astro:page-load', () => {
+        themeController.reinitialize();
+      });
+
+      // View Transitions 후 테마 유지
       document.addEventListener('astro:after-swap', () => {
-        themeManager.applyTheme();
+        themeController.applyTheme();
       });
     </script>
   </body>

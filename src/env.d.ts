@@ -4,10 +4,14 @@
 // Window 타입 확장
 declare global {
   interface Window {
-    __theme: {
-      current: 'light' | 'dark';
-      apply: (theme: 'light' | 'dark') => void;
-      get: () => 'light' | 'dark';
+    __currentTheme: 'light' | 'dark';
+    __themeController: {
+      getTheme: () => 'light' | 'dark';
+      setTheme: (theme: 'light' | 'dark') => void;
+      toggleTheme: () => void;
+      applyTheme: () => void;
+      init: () => void;
+      reinitialize: () => void;
     };
   }
 }
