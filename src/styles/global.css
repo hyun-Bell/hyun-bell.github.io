@@ -8,6 +8,17 @@
     color-scheme: light dark;
   }
 
+  * {
+    @apply transition-colors duration-200;
+  }
+
+  /* 코드 블록 애니메이션 제외 */
+  pre,
+  pre *,
+  code {
+    transition: none !important;
+  }
+
   /* 폰트 스무딩 */
   body {
     -webkit-font-smoothing: antialiased;

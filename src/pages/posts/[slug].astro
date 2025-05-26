@@ -1,9 +1,12 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { formatDate } from '@/lib/utils/strings';
+import { formatDate } from '@/lib/utils/date';
 import { getNotionClient } from '@/lib/notion/client';
-import { marked } from 'marked';
+import { parseNotionMarkdown } from '@/lib/notion/markdown-parser';
+import ReadingProgress from '@/components/blog/ReadingProgress.astro';
+import '@/styles/prism-theme.css';
+import '@/styles/blog-content.css';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -22,10 +25,12 @@ const { data } = post;
 
 const client = getNotionClient();
 const content = await client.getPageContent(data.id);
-const htmlContent = marked(content);
+const htmlContent = parseNotionMarkdown(content);
 ---
 
 <BaseLayout title={data.title} description={data.description} type="article">
+  <ReadingProgress />
+
   <article class="mx-auto max-w-3xl">
     <header class="mb-12 text-center">
       <div class="mb-4 font-mono text-sm text-gray-500 dark:text-gray-500">
@@ -60,10 +65,7 @@ const htmlContent = marked(content);
       }
     </header>
 
-    <div
-      class="prose prose-lg max-w-none dark:prose-invert prose-headings:font-mono prose-code:text-blue-600 prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:bg-gray-900 prose-pre:text-gray-100 dark:prose-code:text-blue-400"
-      set:html={htmlContent}
-    />
+    <div class="blog-content" set:html={htmlContent} />
 
     <footer class="mt-16 border-t border-gray-200 pt-8 dark:border-gray-800">
       <a
