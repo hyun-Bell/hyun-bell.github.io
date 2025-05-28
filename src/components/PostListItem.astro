@@ -49,8 +49,7 @@ const postUrl = `${ROUTES.posts}/${post.data.slug}`;
 
     <h3
       class="font-mono text-lg font-semibold text-gray-900 dark:text-gray-100"
-      transition:name={`post-title-${post.data.slug}`}
-      transition:animate="initial"
+      transition:name={`post-${post.data.slug}`}
     >
       {post.data.title}
     </h3>
@@ -81,9 +80,11 @@ const postUrl = `${ROUTES.posts}/${post.data.slug}`;
     }
   }
 
-  /* View Transitions 활성 시 기본 애니메이션 비활성화 */
-  .astro-route-announcer ~ * .post-item {
-    animation: none;
-    opacity: 1;
+  /* View Transitions 활성 시 초기 애니메이션 비활성화 */
+  @supports (view-transition-name: none) {
+    .post-item {
+      animation: none;
+      opacity: 1;
+    }
   }
 </style>

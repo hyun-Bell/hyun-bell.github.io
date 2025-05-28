@@ -6,7 +6,6 @@
   /* 색상 스키마 설정 */
   :root {
     color-scheme: light;
-    --theme-transition-duration: 0s;
   }
 
   :root.dark {
@@ -52,50 +51,7 @@
   }
 }
 
-@layer components {
-  /* 코드 블록 스타일 */
-  pre {
-    @apply rounded-lg border border-gray-200 dark:border-gray-800;
-  }
-
-  /* 인라인 코드 스타일 */
-  :not(pre) > code {
-    @apply rounded bg-gray-100 px-1 py-0.5 text-sm dark:bg-gray-800;
-  }
-}
-
-@layer utilities {
-  /* 테마 전환 애니메이션 */
-  body,
-  .bg-white,
-  .bg-gray-50,
-  .bg-gray-100,
-  .bg-gray-900,
-  .bg-gray-950,
-  .border-gray-200,
-  .border-gray-800,
-  .text-gray-900,
-  .text-gray-100 {
-    transition:
-      background-color var(--theme-transition-duration) ease,
-      border-color var(--theme-transition-duration) ease,
-      color var(--theme-transition-duration) ease;
-  }
-
-  /* 헤더/푸터 안정화 */
-  [transition\:persist] {
-    contain: size layout style;
-    will-change: auto;
-  }
-
-  /* 메인 컨텐츠 전환 최적화 */
-  main {
-    isolation: isolate;
-    transform: translateZ(0);
-  }
-}
-
-/* View Transitions 애니메이션 */
+/* View Transitions API 스타일 */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -120,7 +76,7 @@
   }
 }
 
-/* 페이지 전환 애니메이션 */
+/* 기본 페이지 전환 애니메이션 */
 ::view-transition-old(root) {
   animation:
     150ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
@@ -133,61 +89,23 @@
     300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
 }
 
-/* 헤더/푸터는 애니메이션 없이 유지 */
+/* persist 요소는 애니메이션 없음 */
 ::view-transition-group(site-header),
 ::view-transition-group(site-footer) {
-  animation: none !important;
+  animation-duration: 0s;
 }
 
-/* 포스트 제목 모프 애니메이션 */
-::view-transition-group(post-title-*) {
+/* 포스트 제목 전환 */
+::view-transition-group(post-*) {
   animation-duration: 0.4s;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* View Transitions 최적화 */
-@supports (view-transition-name: test) {
-  /* contain 속성으로 레이아웃 안정성 확보 */
-  [style*='view-transition-name'] {
-    contain: layout style paint;
-  }
-
-  /* GPU 가속 힌트 */
-  ::view-transition-group(*) {
-    will-change: transform, opacity;
-  }
-}
-
 /* prefers-reduced-motion 지원 */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
-}
-
-header,
-footer {
-  /* 레이아웃 시프트 방지 */
-  contain: layout style;
-  /* 백페이스 가시성 */
-  backface-visibility: hidden;
-  /* 3D 변환 컨텍스트 */
-  transform: translateZ(0);
-}
-
-/* View Transition 중 배경색 유지 */
-::view-transition-old(app-container),
-::view-transition-new(app-container) {
-  /* 배경색 상속 */
-  background: inherit;
-}
-
-/* 블로그 상세 페이지 전환 최적화 */
-.astro-route-announcer ~ * header,
-.astro-route-announcer ~ * footer {
-  /* 강제로 하드웨어 가속 */
-  will-change: transform;
-  transform: translateZ(0);
 }

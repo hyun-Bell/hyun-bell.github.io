@@ -31,123 +31,67 @@ const htmlContent = parseNotionMarkdown(content);
 <BaseLayout title={data.title} description={data.description} type="article">
   <ReadingProgress />
 
-  <!-- article을 감싸는 wrapper 추가 -->
-  <div transition:animate="fade">
-    <article class="mx-auto max-w-3xl">
-      <header class="mb-12 text-center">
-        <div class="mb-4 font-mono text-sm text-gray-500 dark:text-gray-500">
-          <time datetime={data.publishDate.toISOString()}>
-            {formatDate(data.publishDate)}
-          </time>
-          {
-            data.readingTime && (
-              <>
-                <span class="mx-2">•</span>
-                <span>{data.readingTime}min read</span>
-              </>
-            )
-          }
-        </div>
-
-        <h1
-          class="mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl"
-          transition:name={`post-title-${data.slug}`}
-        >
-          {data.title}
-        </h1>
-
+  <article class="mx-auto max-w-3xl">
+    <header class="mb-12 text-center">
+      <div class="mb-4 font-mono text-sm text-gray-500 dark:text-gray-500">
+        <time datetime={data.publishDate.toISOString()}>
+          {formatDate(data.publishDate)}
+        </time>
         {
-          data.tags.length > 0 && (
-            <div class="flex flex-wrap justify-center gap-2">
-              {data.tags.map((tag) => (
-                <span class="font-mono text-sm text-gray-500 dark:text-gray-500">#{tag}</span>
-              ))}
-            </div>
+          data.readingTime && (
+            <>
+              <span class="mx-2">•</span>
+              <span>{data.readingTime}min read</span>
+            </>
           )
         }
-      </header>
+      </div>
 
-      <div class="blog-content" set:html={htmlContent} />
+      <h1
+        class="mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100 sm:text-4xl"
+        transition:name={`post-${data.slug}`}
+      >
+        {data.title}
+      </h1>
 
-      <footer class="mt-16 border-t border-gray-200 pt-8 dark:border-gray-800">
-        <a
-          href="/posts"
-          class="inline-flex items-center gap-2 font-mono text-sm text-blue-600 hover:underline dark:text-blue-400"
-        >
-          <span>←</span>
-          back to list
-        </a>
-      </footer>
-    </article>
-  </div>
+      {
+        data.tags.length > 0 && (
+          <div class="flex flex-wrap justify-center gap-2">
+            {data.tags.map((tag) => (
+              <span class="font-mono text-sm text-gray-500 dark:text-gray-500">#{tag}</span>
+            ))}
+          </div>
+        )
+      }
+    </header>
+
+    <div class="blog-content" set:html={htmlContent} />
+
+    <footer class="mt-16 border-t border-gray-200 pt-8 dark:border-gray-800">
+      <a
+        href="/posts"
+        class="inline-flex items-center gap-2 font-mono text-sm text-blue-600 hover:underline dark:text-blue-400"
+      >
+        <span>←</span>
+        back to list
+      </a>
+    </footer>
+  </article>
 </BaseLayout>
 
-<style>
-  /* 포스트 상세 페이지 전용 스타일 */
-  article {
-    /* 부드러운 나타남 효과 */
-    animation: fadeInUp 0.6s ease-out;
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* 제목 스타일 */
-  h1 {
-    /* 긴 제목도 잘 보이도록 */
-    word-break: keep-all;
-    line-height: 1.3;
-  }
-
-  /* 태그 호버 효과 */
-  header span[class*='text-gray-500']:hover {
-    @apply text-gray-700 dark:text-gray-300;
-    cursor: default;
-  }
-
-  /* 뒤로가기 링크 스타일 */
-  footer a {
-    position: relative;
-    padding-bottom: 1px;
-  }
-
-  footer a::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 1px;
-    @apply bg-blue-600 dark:bg-blue-400;
-    transition: width 0.2s ease;
-  }
-
-  footer a:hover::after {
-    width: 100%;
-  }
-
-  /* View Transitions 활성 시 애니메이션 비활성화 */
-  @supports (view-transition-name: test) {
-    .astro-route-announcer ~ * article {
-      animation: none;
-    }
-  }
-</style>
-
 <script>
-  // 코드 블록 복사 기능
+  // 코드 블록 복사 기능 - astro:page-load 이벤트 사용
   document.addEventListener('astro:page-load', () => {
+    setupCodeCopyButtons();
+  });
+
+  function setupCodeCopyButtons() {
     const codeBlocks = document.querySelectorAll('pre[class*="language-"]');
 
     codeBlocks.forEach((block) => {
+      // 이미 버튼이 있으면 skip
+      if (block.querySelector('.copy-code-button')) return;
+
       // 복사 버튼 추가
       const button = document.createElement('button');
       button.className = 'copy-code-button';
@@ -197,25 +141,12 @@ const htmlContent = parseNotionMarkdown(content);
 
       block.appendChild(button);
     });
-  });
+  }
+
+  // 초기 로드 시에도 실행
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupCodeCopyButtons);
+  } else {
+    setupCodeCopyButtons();
+  }
 </script>
-
-<style is:global>
-  /* 코드 복사 버튼 hover 스타일 */
-  .copy-code-button:hover {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-  }
-
-  .copy-code-button:active {
-    transform: scale(0.95);
-  }
-
-  /* 다크 모드에서 코드 블록 버튼 */
-  :root.dark .copy-code-button {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  :root.dark .copy-code-button:hover {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-  }
-</style>

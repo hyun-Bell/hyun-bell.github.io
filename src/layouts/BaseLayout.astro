@@ -54,81 +54,62 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
     <!-- 전체 컨테이너 -->
     <div
       class="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100"
-      transition:name="app-container"
     >
-      <!-- 헤더 -->
-      <Header transition:persist />
+      <!-- 헤더 - persist 사용 -->
+      <Header transition:persist="site-header" />
 
       <!-- 메인 컨텐츠 -->
       <main class="container mx-auto flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <slot />
       </main>
 
-      <!-- 푸터 -->
-      <Footer transition:persist />
+      <!-- 푸터 - persist 사용 -->
+      <Footer transition:persist="site-footer" />
     </div>
 
     <script>
       import { theme } from '@/lib/theme';
 
-      // View Transitions API 지원 확인
-      const supportsViewTransitions = 'startViewTransition' in document;
+      // 초기 테마 설정
+      theme.init();
 
-      if (!supportsViewTransitions) {
-        console.warn('View Transitions API not supported, using fallback navigation');
-      }
+      // astro:after-swap - DOM 교체 직후, 렌더링 전
+      document.addEventListener('astro:after-swap', () => {
+        // 테마 즉시 적용 (FOUC 방지)
+        const isDark =
+          localStorage.getItem('theme') === 'dark' ||
+          (!localStorage.getItem('theme') &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-      // 스크롤 위치 관리
-      const scrollPositions = new Map<string, number>();
-
-      // 초기화
-      document.addEventListener('DOMContentLoaded', () => {
-        theme.init();
+        document.documentElement.classList.toggle('dark', isDark);
       });
 
-      // View Transitions 이벤트 핸들링
-      if (supportsViewTransitions) {
-        // 페이지 전환 전 - 현재 상태 저장
-        document.addEventListener('astro:before-preparation', () => {
-          const url = window.location.pathname;
-          scrollPositions.set(url, window.scrollY);
-        });
+      // astro:page-load - 페이지 로드 완료 후
+      document.addEventListener('astro:page-load', () => {
+        // 테마 버튼 재연결
+        theme.reinit();
 
-        // DOM 교체 전 - 테마 상태 유지
-        document.addEventListener('astro:before-swap', (event: any) => {
-          const isDark = document.documentElement.classList.contains('dark');
-          if (isDark && event.newDocument) {
-            event.newDocument.documentElement.classList.add('dark');
-          }
-        });
+        // 네비게이션 활성화 상태 업데이트
+        updateActiveNav();
+      });
 
-        // 페이지 로드 완료 - 스크롤 복원 및 테마 재초기화
-        document.addEventListener('astro:page-load', () => {
-          // 테마 버튼 재연결
-          theme.reinit();
+      // 네비게이션 활성화 상태 관리
+      function updateActiveNav() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('[data-nav-item]');
 
-          // 뒤로가기인 경우 스크롤 위치 복원
-          const currentUrl = window.location.pathname;
-          const savedPosition = scrollPositions.get(currentUrl);
+        navLinks.forEach((link) => {
+          const href = link.getAttribute('data-nav-item');
+          if (!href) return;
 
-          // @ts-ignore - history.state 타입 정의 없음
-          if (savedPosition !== undefined && history.state?.index < history.state?.previousIndex) {
-            // 부드러운 스크롤 복원
-            requestAnimationFrame(() => {
-              window.scrollTo({
-                top: savedPosition,
-                behavior: 'instant',
-              });
-            });
-          }
+          const isActive = href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+          link.classList.toggle('active', isActive);
         });
       }
 
-      // 테마 변경 이벤트 로깅 (개발용)
-      if (import.meta.env.DEV) {
-        window.addEventListener('theme-changed', (event: any) => {
-          console.log('[Theme] Changed to:', event.detail.theme);
-        });
+      // View Transitions API 지원 확인
+      if (!document.startViewTransition) {
+        console.warn('View Transitions API not supported');
       }
     </script>
   </body>
