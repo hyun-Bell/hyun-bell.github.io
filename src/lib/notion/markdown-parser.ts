@@ -2,6 +2,7 @@
 
 import { marked } from 'marked';
 import Prism from 'prismjs';
+import { sanitizeContent } from './sanitizer';
 
 // 지원할 언어들 import
 import 'prismjs/components/prism-typescript';
@@ -31,6 +32,9 @@ const languageAliases: Record<string, string> = {
  * Notion 마크다운을 HTML로 변환
  */
 export function parseNotionMarkdown(markdown: string): string {
+  // 보안 처리 먼저 수행
+  const sanitizedMarkdown = sanitizeContent(markdown);
+
   // marked 렌더러 커스터마이징
   const renderer = new marked.Renderer();
 
@@ -72,7 +76,7 @@ export function parseNotionMarkdown(markdown: string): string {
   });
 
   // 동기적으로 처리
-  return marked.parse(markdown) as string;
+  return marked.parse(sanitizedMarkdown) as string;
 }
 
 /**

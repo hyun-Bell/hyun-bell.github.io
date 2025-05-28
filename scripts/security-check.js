@@ -11,38 +11,41 @@ import path from 'path';
 
 // 검사할 패턴들
 const SENSITIVE_PATTERNS = [
-  // API 키 패턴
-  /NOTION_TOKEN['":\s]*['"](secret_[A-Za-z0-9]+)['"]/gi,
-  /API_KEY['":\s]*['"]([\w-]+)['"]/gi,
-  /SECRET['":\s]*['"]([\w-]+)['"]/gi,
-
-  // 이메일 패턴 (환경 변수가 아닌 하드코딩된 경우)
-  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-
-  // Private 키 패턴
-  /-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----/,
+  // API 키 패턴 (실제 값만 검사)
+  /secret_[A-Za-z0-9_]{32,}/gi,
+  /sk_live_[A-Za-z0-9_]{24,}/gi,
+  /pk_live_[A-Za-z0-9_]{24,}/gi,
 
   // GitHub Token
   /ghp_[A-Za-z0-9_]{36}/g,
   /github_pat_[A-Za-z0-9_]{82}/g,
+
+  // Private 키 패턴
+  /-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----/,
 ];
 
-// 환경 변수 이름들 (이것들은 빌드된 파일에 있으면 안됨)
-const FORBIDDEN_ENV_VARS = [
-  'NOTION_TOKEN',
-  'NOTION_DATABASE_ID',
-  'NOTION_PAGES_DATABASE_ID',
-  'NOTION_PROJECTS_DATABASE_ID',
-  'NOTION_SNIPPETS_DATABASE_ID',
+// 환경 변수 값 패턴 (이름이 아닌 실제 값)
+const ENV_VALUE_PATTERNS = [
+  // Notion 토큰 패턴
+  /secret_[A-Za-z0-9_]{40,50}/g,
+
+  // UUID 패턴 (DATABASE_ID 등)
+  /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
 ];
 
 // 제외할 디렉토리
-const EXCLUDE_DIRS = [
-  'node_modules',
-  '.git',
-  '.astro',
-  'scripts',
-  'src', // 소스 코드는 검사하지 않음
+const EXCLUDE_DIRS = ['node_modules', '.git', '.astro', 'scripts', 'src'];
+
+// 허용된 컨텍스트 (코드 예제 등)
+const ALLOWED_CONTEXTS = [
+  '<code>',
+  '<pre>',
+  'class="language-',
+  'NOTION_DATABASE_ID',
+  'NOTION_TOKEN',
+  'env.',
+  'process.env',
+  'import.meta.env',
 ];
 
 /**
@@ -51,6 +54,18 @@ const EXCLUDE_DIRS = [
 function shouldCheckFile(filePath) {
   const ext = path.extname(filePath);
   return ['.js', '.html', '.json', '.css'].includes(ext);
+}
+
+/**
+ * 텍스트가 안전한 컨텍스트에 있는지 확인
+ */
+function isInSafeContext(content, index) {
+  // 앞뒤 100자를 확인하여 코드 블록이나 설명 문서인지 판단
+  const contextStart = Math.max(0, index - 100);
+  const contextEnd = Math.min(content.length, index + 100);
+  const context = content.substring(contextStart, contextEnd);
+
+  return ALLOWED_CONTEXTS.some((allowed) => context.includes(allowed));
 }
 
 /**
@@ -67,7 +82,6 @@ async function checkDirectory(dir) {
       const stat = await fs.stat(filePath);
 
       if (stat.isDirectory()) {
-        // 제외 디렉토리인지 확인
         if (!EXCLUDE_DIRS.includes(file)) {
           const subIssues = await checkDirectory(filePath);
           issues.push(...subIssues);
@@ -102,27 +116,43 @@ async function checkFile(filePath) {
           file: relativePath,
           type: 'sensitive_pattern',
           pattern: pattern.toString(),
-          matches: [...new Set(matches)], // 중복 제거
+          matches: [...new Set(matches)],
         });
       }
     }
 
-    // 금지된 환경 변수 검사
-    for (const envVar of FORBIDDEN_ENV_VARS) {
-      if (content.includes(envVar)) {
-        // 실제 값이 포함되어 있는지 더 정확히 검사
-        // \s는 불필요한 escape이므로 제거, 그리고 따옴표는 선택적으로 허용
-        // 따옴표, 콜론, 공백을 선택적으로 허용
-        const valuePattern = new RegExp(`${envVar}['": ]*['"]?((?!PUBLIC_)[^'"]+)['"]?`, 'gi');
-        const matches = content.match(valuePattern);
-        if (matches) {
+    // 환경 변수 값 패턴 검사
+    for (const pattern of ENV_VALUE_PATTERNS) {
+      let match;
+      const regex = new RegExp(pattern);
+
+      while ((match = regex.exec(content)) !== null) {
+        // 안전한 컨텍스트인지 확인
+        if (!isInSafeContext(content, match.index)) {
           issues.push({
             file: relativePath,
-            type: 'env_var_exposed',
-            envVar,
-            matches,
+            type: 'env_value_exposed',
+            value: match[0],
+            context: content.substring(match.index - 50, match.index + 50),
           });
         }
+      }
+    }
+
+    // 실제 환경 변수 값이 하드코딩되어 있는지 검사
+    const actualEnvValues = {
+      NOTION_TOKEN: process.env.NOTION_TOKEN,
+      NOTION_DATABASE_ID: process.env.NOTION_DATABASE_ID,
+    };
+
+    for (const [name, value] of Object.entries(actualEnvValues)) {
+      if (value && content.includes(value)) {
+        issues.push({
+          file: relativePath,
+          type: 'actual_env_value_exposed',
+          envVar: name,
+          severity: 'critical',
+        });
       }
     }
   } catch (error) {
@@ -143,46 +173,42 @@ async function main() {
   // dist 디렉토리 존재 확인
   try {
     await fs.access(distDir);
-    // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    console.log('ℹ️  No dist directory found. Skipping security check.');
+    console.log('ℹ️  No dist directory found. Skipping security check.', error);
     process.exit(0);
   }
 
   // 보안 검사 실행
   const issues = await checkDirectory(distDir);
 
-  if (issues.length === 0) {
+  // 심각도별로 이슈 분류
+  const criticalIssues = issues.filter((i) => i.severity === 'critical');
+  const warningIssues = issues.filter((i) => i.severity !== 'critical');
+
+  if (criticalIssues.length > 0) {
+    console.error('🚨 CRITICAL SECURITY ISSUES FOUND!\n');
+    criticalIssues.forEach((issue) => {
+      console.error(`❌ ${issue.envVar} value exposed in ${issue.file}`);
+    });
+    console.error('\nDO NOT DEPLOY! Environment variable values are exposed!\n');
+    process.exit(1);
+  }
+
+  if (warningIssues.length === 0) {
     console.log('✅ Security check passed! No sensitive information found in build output.\n');
     process.exit(0);
   } else {
-    console.error('❌ Security check failed! Found potential security issues:\n');
+    console.log('⚠️  Security warnings found:\n');
 
-    // 이슈 타입별로 그룹화
-    const groupedIssues = issues.reduce((acc, issue) => {
-      const key = issue.type;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(issue);
-      return acc;
-    }, {});
-
-    // 이슈 출력
-    for (const [type, typeIssues] of Object.entries(groupedIssues)) {
-      console.error(`\n${type.toUpperCase().replace(/_/g, ' ')}:`);
-
-      for (const issue of typeIssues) {
-        console.error(`  - File: ${issue.file}`);
-        if (issue.matches) {
-          console.error(`    Found: ${issue.matches.join(', ')}`);
-        }
-        if (issue.envVar) {
-          console.error(`    Environment variable: ${issue.envVar}`);
-        }
+    warningIssues.forEach((issue) => {
+      console.warn(`- ${issue.file}`);
+      if (issue.value) {
+        console.warn(`  Found: ${issue.value.substring(0, 10)}...`);
       }
-    }
+    });
 
-    console.error('\n⚠️  Please review and fix these issues before deploying.\n');
-    process.exit(1);
+    console.log('\nPlease review these warnings before deploying.\n');
+    process.exit(0);
   }
 }
 

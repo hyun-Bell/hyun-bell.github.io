@@ -16,5 +16,16 @@
   "tailwindCSS.experimental.configFile": "tailwind.config.mjs",
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+  "cSpell.words": [
+    "FOUC",
+    "reinit",
+    "astro",
+    "tailwindcss",
+    "clsx",
+    "pnpm",
+    "vite",
+    "vitest",
+    "unplugin"
+  ]
 }
