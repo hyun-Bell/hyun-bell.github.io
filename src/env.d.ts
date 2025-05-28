@@ -26,17 +26,14 @@ declare global {
   }
 }
 
+// 환경 변수 타입
 interface ImportMetaEnv {
-  // Notion API Configuration
   readonly NOTION_TOKEN: string;
   readonly NOTION_DATABASE_ID: string;
-  readonly NOTION_PAGES_DATABASE_ID: string;
+  readonly NOTION_PAGES_DATABASE_ID?: string;
   readonly NOTION_PROJECTS_DATABASE_ID?: string;
   readonly NOTION_SNIPPETS_DATABASE_ID?: string;
-
-  // Public Environment Variables
   readonly PUBLIC_SITE_URL: string;
-  readonly PUBLIC_GA_ID?: string;
   readonly PUBLIC_SITE_TITLE: string;
   readonly PUBLIC_SITE_DESCRIPTION: string;
   readonly PUBLIC_AUTHOR_NAME: string;
@@ -44,11 +41,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_GITHUB_URL?: string;
   readonly PUBLIC_TWITTER_URL?: string;
   readonly PUBLIC_LINKEDIN_URL?: string;
-
-  // Build Configuration
-  readonly NODE_ENV: 'development' | 'production' | 'test';
-  readonly PROD: boolean;
-  readonly DEV: boolean;
+  readonly PUBLIC_GA_ID?: string;
 }
 
 interface ImportMeta {

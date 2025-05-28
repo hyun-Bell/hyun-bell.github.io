@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  /* 색상 스키마 설정 */
+  /* 기본 설정 */
   :root {
     color-scheme: light;
   }
@@ -12,53 +12,32 @@
     color-scheme: dark;
   }
 
-  /* 폰트 스무딩 */
+  /* 부드러운 스크롤 */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* 폰트 최적화 */
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-  }
-
-  /* 포커스 스타일 */
-  :focus-visible {
-    @apply outline-none ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-950;
-  }
-
-  /* 스크롤바 스타일 */
-  @supports (scrollbar-width: thin) {
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: theme('colors.gray.400') transparent;
-    }
-  }
-
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 dark:bg-gray-600;
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500 dark:bg-gray-500;
   }
 }
 
-/* View Transitions API 스타일 */
+/* View Transitions - 심플하고 빠른 애니메이션 */
 @keyframes fade-in {
   from {
     opacity: 0;
   }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fade-out {
+  from {
+    opacity: 1;
+  }
   to {
     opacity: 0;
   }
@@ -66,46 +45,48 @@
 
 @keyframes slide-from-right {
   from {
-    transform: translateX(30px);
+    transform: translateX(20px);
+  }
+  to {
+    transform: translateX(0);
   }
 }
 
 @keyframes slide-to-left {
+  from {
+    transform: translateX(0);
+  }
   to {
-    transform: translateX(-30px);
+    transform: translateX(-20px);
   }
 }
 
-/* 기본 페이지 전환 애니메이션 */
+/* 기본 페이지 전환 - 빠르고 부드럽게 */
 ::view-transition-old(root) {
   animation:
-    150ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
-    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+    90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    200ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
 }
 
 ::view-transition-new(root) {
   animation:
-    150ms cubic-bezier(0, 0, 0.2, 1) 150ms both fade-in,
-    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
+    90ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+    200ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
 }
 
-/* persist 요소는 애니메이션 없음 */
-::view-transition-group(site-header),
-::view-transition-group(site-footer) {
-  animation-duration: 0s;
+/* 포스트 제목 모프 - GPU 가속 */
+@supports (view-transition-name: none) {
+  [style*='view-transition-name'] {
+    will-change: transform;
+    transform: translateZ(0);
+  }
 }
 
-/* 포스트 제목 전환 */
-::view-transition-group(post-*) {
-  animation-duration: 0.4s;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* prefers-reduced-motion 지원 */
+/* prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
+  *,
   ::view-transition-old(*),
   ::view-transition-new(*) {
-    animation: none !important;
+    animation-duration: 0.01ms !important;
   }
 }

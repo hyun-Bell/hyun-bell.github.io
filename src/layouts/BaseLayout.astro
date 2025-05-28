@@ -30,10 +30,8 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 
-    <!-- 테마 스크립트 (FOUC 방지) -->
+    <!-- 테마 스크립트 최우선 실행 -->
     <ThemeScript />
 
     <!-- SEO -->
@@ -47,70 +45,42 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
       rel="stylesheet"
     />
 
-    <!-- ViewTransitions -->
+    <!-- View Transitions -->
     <ClientRouter />
   </head>
   <body>
-    <!-- 전체 컨테이너 -->
     <div
       class="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100"
     >
-      <!-- 헤더 - persist 사용 -->
-      <Header transition:persist="site-header" />
+      <!-- 헤더/푸터는 persist로 DOM 재사용 -->
+      <Header transition:persist />
 
-      <!-- 메인 컨텐츠 -->
+      <!-- 메인 컨텐츠만 전환 -->
       <main class="container mx-auto flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <slot />
       </main>
 
-      <!-- 푸터 - persist 사용 -->
-      <Footer transition:persist="site-footer" />
+      <Footer transition:persist />
     </div>
 
     <script>
+      // 최소한의 필수 스크립트만 유지
       import { theme } from '@/lib/theme';
 
-      // 초기 테마 설정
+      // 초기화
       theme.init();
 
-      // astro:after-swap - DOM 교체 직후, 렌더링 전
+      // View Transitions 핵심 이벤트만 처리
       document.addEventListener('astro:after-swap', () => {
-        // 테마 즉시 적용 (FOUC 방지)
-        const isDark =
-          localStorage.getItem('theme') === 'dark' ||
-          (!localStorage.getItem('theme') &&
-            window.matchMedia('(prefers-color-scheme: dark)').matches);
-
+        // 테마 상태만 빠르게 복원
+        const isDark = localStorage.getItem('theme') === 'dark';
         document.documentElement.classList.toggle('dark', isDark);
       });
 
-      // astro:page-load - 페이지 로드 완료 후
       document.addEventListener('astro:page-load', () => {
-        // 테마 버튼 재연결
+        // 테마 토글 버튼만 재연결
         theme.reinit();
-
-        // 네비게이션 활성화 상태 업데이트
-        updateActiveNav();
       });
-
-      // 네비게이션 활성화 상태 관리
-      function updateActiveNav() {
-        const currentPath = window.location.pathname;
-        const navLinks = document.querySelectorAll('[data-nav-item]');
-
-        navLinks.forEach((link) => {
-          const href = link.getAttribute('data-nav-item');
-          if (!href) return;
-
-          const isActive = href === '/' ? currentPath === '/' : currentPath.startsWith(href);
-          link.classList.toggle('active', isActive);
-        });
-      }
-
-      // View Transitions API 지원 확인
-      if (!document.startViewTransition) {
-        console.warn('View Transitions API not supported');
-      }
     </script>
   </body>
 </html>

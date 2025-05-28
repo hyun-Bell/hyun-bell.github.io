@@ -4,7 +4,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import { formatDate } from '@/lib/utils/date';
 import { getNotionClient } from '@/lib/notion/client';
 import { parseNotionMarkdown } from '@/lib/notion/markdown-parser';
-import ReadingProgress from '@/components/blog/ReadingProgress.astro';
 import '@/styles/prism-theme.css';
 import '@/styles/blog-content.css';
 
@@ -29,8 +28,6 @@ const htmlContent = parseNotionMarkdown(content);
 ---
 
 <BaseLayout title={data.title} description={data.description} type="article">
-  <ReadingProgress />
-
   <article class="mx-auto max-w-3xl">
     <header class="mb-12 text-center">
       <div class="mb-4 font-mono text-sm text-gray-500 dark:text-gray-500">
@@ -53,16 +50,6 @@ const htmlContent = parseNotionMarkdown(content);
       >
         {data.title}
       </h1>
-
-      {
-        data.tags.length > 0 && (
-          <div class="flex flex-wrap justify-center gap-2">
-            {data.tags.map((tag) => (
-              <span class="font-mono text-sm text-gray-500 dark:text-gray-500">#{tag}</span>
-            ))}
-          </div>
-        )
-      }
     </header>
 
     <div class="blog-content" set:html={htmlContent} />
@@ -78,75 +65,3 @@ const htmlContent = parseNotionMarkdown(content);
     </footer>
   </article>
 </BaseLayout>
-
-<script>
-  // 코드 블록 복사 기능 - astro:page-load 이벤트 사용
-  document.addEventListener('astro:page-load', () => {
-    setupCodeCopyButtons();
-  });
-
-  function setupCodeCopyButtons() {
-    const codeBlocks = document.querySelectorAll('pre[class*="language-"]');
-
-    codeBlocks.forEach((block) => {
-      // 이미 버튼이 있으면 skip
-      if (block.querySelector('.copy-code-button')) return;
-
-      // 복사 버튼 추가
-      const button = document.createElement('button');
-      button.className = 'copy-code-button';
-      button.textContent = 'Copy';
-      button.setAttribute('aria-label', 'Copy code to clipboard');
-
-      // 버튼 스타일
-      Object.assign(button.style, {
-        position: 'absolute',
-        top: '8px',
-        right: '8px',
-        padding: '4px 8px',
-        fontSize: '12px',
-        borderRadius: '4px',
-        border: 'none',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        color: '#fff',
-        cursor: 'pointer',
-        opacity: '0',
-        transition: 'opacity 0.2s',
-      });
-
-      // 호버 시 버튼 표시
-      (block as HTMLElement).style.position = 'relative';
-      block.addEventListener('mouseenter', () => {
-        button.style.opacity = '1';
-      });
-      block.addEventListener('mouseleave', () => {
-        button.style.opacity = '0';
-      });
-
-      // 복사 기능
-      button.addEventListener('click', async () => {
-        const code = block.textContent || '';
-
-        try {
-          await navigator.clipboard.writeText(code);
-          button.textContent = 'Copied!';
-          setTimeout(() => {
-            button.textContent = 'Copy';
-          }, 2000);
-        } catch (err) {
-          console.error('Failed to copy:', err);
-          button.textContent = 'Error';
-        }
-      });
-
-      block.appendChild(button);
-    });
-  }
-
-  // 초기 로드 시에도 실행
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupCodeCopyButtons);
-  } else {
-    setupCodeCopyButtons();
-  }
-</script>

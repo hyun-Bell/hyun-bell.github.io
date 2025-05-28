@@ -14,8 +14,7 @@ const postUrl = `${ROUTES.posts}/${post.data.slug}`;
 ---
 
 <article
-  class="post-item group relative rounded-lg border border-gray-200 bg-white p-6 hover:border-gray-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
-  style={`--animation-delay: ${index * 50}ms`}
+  class="group relative rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md dark:border-gray-800 dark:bg-gray-900"
 >
   <a href={postUrl} class="absolute inset-0 z-10">
     <span class="sr-only">{post.data.title} 읽기</span>
@@ -33,18 +32,6 @@ const postUrl = `${ROUTES.posts}/${post.data.slug}`;
       <time datetime={post.data.publishDate.toISOString()}>
         {formatDate(post.data.publishDate)}
       </time>
-      {
-        post.data.tags && post.data.tags.length > 0 && (
-          <>
-            <span>•</span>
-            <div class="flex flex-wrap gap-2">
-              {post.data.tags.slice(0, 3).map((tag) => (
-                <span class="font-mono text-xs">#{tag}</span>
-              ))}
-            </div>
-          </>
-        )
-      }
     </div>
 
     <h3
@@ -59,32 +46,15 @@ const postUrl = `${ROUTES.posts}/${post.data.slug}`;
         <p class="line-clamp-2 text-gray-600 dark:text-gray-400">{post.data.description}</p>
       )
     }
+
+    {
+      post.data.tags && post.data.tags.length > 0 && (
+        <div class="flex flex-wrap gap-2">
+          {post.data.tags.slice(0, 3).map((tag) => (
+            <span class="font-mono text-xs text-gray-500">#{tag}</span>
+          ))}
+        </div>
+      )
+    }
   </div>
 </article>
-
-<style>
-  .post-item {
-    animation: fadeIn 0.5s ease-out forwards;
-    animation-delay: var(--animation-delay, 0ms);
-    opacity: 0;
-  }
-
-  @keyframes fadeIn {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-  }
-
-  /* View Transitions 활성 시 초기 애니메이션 비활성화 */
-  @supports (view-transition-name: none) {
-    .post-item {
-      animation: none;
-      opacity: 1;
-    }
-  }
-</style>
