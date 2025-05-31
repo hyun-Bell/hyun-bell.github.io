@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro check && astro build && pnpm notion:check",
-    "build:fresh": "pnpm cache:clear && pnpm build",
+    "build:fresh": "rm -rf .astro && pnpm build",
     "postbuild": "node scripts/security-check.js",
     "preview": "astro preview",
     "astro": "astro",
@@ -16,9 +16,10 @@
     "format:check": "prettier --check .",
     "type-check": "astro check && tsc --noEmit",
     "clean": "rimraf dist .astro node_modules/.cache",
-    "cache:clear": "node scripts/clear-cache.js",
+    "cache:clear": "rm -rf .astro",
     "notion:check": "node scripts/check-notion-properties.js",
-    "check:updates": "node scripts/check-notion-updates.js"
+    "sync:status": "node scripts/sync-status.js",
+    "sync:force": "node scripts/force-sync.js"
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [

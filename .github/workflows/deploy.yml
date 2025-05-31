@@ -14,22 +14,29 @@ concurrency:
   group: 'pages'
   cancel-in-progress: false
 
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: 9
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          fetch-depth: 0 # 전체 히스토리 (캐시 복원용)
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: Get pnpm store directory
         shell: bash
@@ -44,8 +51,31 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+      # Astro 캐시 추가
+      - name: Cache Astro build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .astro
+            node_modules/.vite
+          key: ${{ runner.os }}-astro-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('src/content/config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-astro-
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      # 환경 변수 검증
+      - name: Validate environment
+        run: |
+          if [ -z "${{ secrets.NOTION_TOKEN }}" ]; then
+            echo "::error::NOTION_TOKEN is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.NOTION_DATABASE_ID }}" ]; then
+            echo "::error::NOTION_DATABASE_ID is not set"
+            exit 1
+          fi
 
       - name: Build site
         env:
@@ -57,7 +87,23 @@ jobs:
           PUBLIC_AUTHOR_NAME: ${{ vars.PUBLIC_AUTHOR_NAME }}
           PUBLIC_AUTHOR_EMAIL: ${{ vars.PUBLIC_AUTHOR_EMAIL }}
           PUBLIC_GITHUB_URL: ${{ vars.PUBLIC_GITHUB_URL }}
-        run: pnpm build
+        run: |
+          pnpm build
+
+          # 빌드 결과 검증
+          if [ ! -d "dist" ]; then
+            echo "::error::Build failed - dist directory not found"
+            exit 1
+          fi
+
+      # 빌드 아티팩트 정보
+      - name: Build info
+        run: |
+          echo "### 📊 Build Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Date: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- File Count: $(find dist -type f | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- Total Size: $(du -sh dist | cut -f1)" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

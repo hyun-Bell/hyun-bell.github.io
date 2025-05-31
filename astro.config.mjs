@@ -20,4 +20,22 @@ export default defineConfig({
   },
 
   output: 'static',
+
+  contentCollectionCache: true,
+
+  // Vite 최적화
+  vite: {
+    optimizeDeps: {
+      include: ['@notionhq/client', 'notion-to-md'],
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            notion: ['@notionhq/client', 'notion-to-md'],
+          },
+        },
+      },
+    },
+  },
 });

@@ -1,7 +1,3 @@
-/**
- * Notion 클라이언트 구현
- */
-
 import type { BlogPost, Project, Snippet } from '@/lib/types/notion';
 import { env } from '@/lib/utils/env';
 import { logError, NotionError, retry } from '@/lib/utils/errors';
@@ -12,6 +8,14 @@ import type {
   RichTextItemResponse,
 } from '@notionhq/client/build/src/api-endpoints';
 import { NotionToMarkdown } from 'notion-to-md';
+
+export interface PostSummary {
+  id: string;
+  slug: string;
+  title: string;
+  lastModified: string;
+  published: boolean;
+}
 
 export class NotionClient {
   private client: Client;
@@ -31,6 +35,96 @@ export class NotionClient {
   }
 
   /**
+   * 포스트 요약 정보만 가져오기
+   * 증분 업데이트를 위한 메타데이터만 조회
+   */
+  async getPostSummaries(): Promise<PostSummary[]> {
+    try {
+      const databaseId = env.NOTION_DATABASE_ID();
+
+      const response = await retry(
+        () =>
+          this.client.databases.query({
+            database_id: databaseId,
+            filter: {
+              property: 'Published',
+              checkbox: { equals: true },
+            },
+            page_size: 100,
+          }),
+        {
+          maxAttempts: 3,
+          delay: 1000,
+          onRetry: (error, attempt) => {
+            logError(error, `getPostSummaries retry ${attempt}`);
+          },
+        },
+      );
+
+      const summaries: PostSummary[] = [];
+
+      for (const page of response.results) {
+        if (!isFullPage(page)) continue;
+
+        try {
+          const title = this.getTitle(page.properties) || 'Untitled';
+          const slug = page.id.replace(/-/g, '');
+          const published =
+            this.getCheckbox(page.properties.Published) ||
+            this.getCheckbox(page.properties.게시) ||
+            false;
+
+          // 게시된 포스트만 추가
+          if (published) {
+            summaries.push({
+              id: page.id,
+              slug,
+              title,
+              lastModified: page.last_edited_time,
+              published,
+            });
+          }
+        } catch (error) {
+          logError(error, `transformSummary ${page.id}`);
+        }
+      }
+
+      return summaries;
+    } catch (error) {
+      throw new NotionError('Failed to fetch post summaries', 'FETCH_SUMMARIES_ERROR');
+    }
+  }
+
+  /**
+   * 개별 포스트 전체 콘텐츠 가져오기
+   */
+  async getFullPost(pageId: string): Promise<BlogPost> {
+    try {
+      // 페이지 정보 가져오기
+      const page = await retry(() => this.client.pages.retrieve({ page_id: pageId }), {
+        maxAttempts: 3,
+        delay: 1000,
+      });
+
+      if (!isFullPage(page)) {
+        throw new NotionError(`Page ${pageId} is not a full page`, 'INVALID_PAGE');
+      }
+
+      // 콘텐츠 가져오기
+      const content = await this.getPageContent(pageId);
+
+      // BlogPost로 변환
+      const post = await this.transformBlogPost(page as PageObjectResponse);
+      post.content = content;
+      post.readingTime = calculateReadingTime(content);
+
+      return post;
+    } catch (error) {
+      throw new NotionError(`Failed to fetch full post: ${pageId}`, 'FETCH_POST_ERROR');
+    }
+  }
+
+  /**
    * 블로그 포스트 목록 가져오기
    */
   async getBlogPosts(): Promise<BlogPost[]> {
@@ -41,7 +135,6 @@ export class NotionClient {
         () =>
           this.client.databases.query({
             database_id: databaseId,
-            // Published 필터 제거 - 모든 포스트를 가져온 후 JavaScript로 필터링
           }),
         {
           maxAttempts: 3,
@@ -81,7 +174,6 @@ export class NotionClient {
         `Filtered posts: ${publishedPosts.length} published out of ${posts.length} total`,
       );
 
-      // JavaScript로 날짜순 정렬
       publishedPosts.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
 
       return publishedPosts;
@@ -184,6 +276,7 @@ export class NotionClient {
       throw new NotionError(`Failed to fetch page content: ${pageId}`, 'FETCH_CONTENT_ERROR');
     }
   }
+
   /**
    * 블로그 포스트 변환
    */
@@ -395,7 +488,6 @@ export class NotionClient {
   }
 }
 
-// 싱글톤 인스턴스
 let notionClient: NotionClient | null = null;
 
 export function getNotionClient(): NotionClient {

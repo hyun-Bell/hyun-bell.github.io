@@ -1,10 +1,11 @@
 name: Scheduled Content Update
 
 on:
-  # 매일 오전 9시, 오후 11시 (KST) 실행
+  # 매일 정해진 시간에 자동으로 실행
   schedule:
     - cron: '0 0 * * *' # UTC 0시 = KST 오전 9시
-    - cron: '0 14 * * *' # UTC 14시 = KST 오후 11시
+    - cron: '0 8 * * *' # UTC 8시 = KST 오후 5시
+    - cron: '0 15 * * *' # UTC 15시 = KST 오전 0시
 
   # 수동 실행 가능
   workflow_dispatch:

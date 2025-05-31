@@ -34,3 +34,6 @@ pnpm-debug.log*
 .notion-last-update.json
 **/secrets/
 **/credentials/
+
+# Notion update tracking
+.notion-last-update.json
