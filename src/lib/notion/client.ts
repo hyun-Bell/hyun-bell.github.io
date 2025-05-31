@@ -3,15 +3,15 @@
  */
 
 import type { BlogPost, Project, Snippet } from '@/lib/types/notion';
+import type { NotionRichText } from '@/lib/types/notion-blocks';
 import { env } from '@/lib/utils/env';
 import { logError, NotionError, retry } from '@/lib/utils/errors';
 import { calculateReadingTime } from '@/lib/utils/strings';
+import { escapeHtml } from '@/lib/utils/security';
 import { Client, isFullPage } from '@notionhq/client';
-import type {
-  PageObjectResponse,
-  RichTextItemResponse,
-} from '@notionhq/client/build/src/api-endpoints';
+import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { NotionToMarkdown } from 'notion-to-md';
+import { convertToPublicNotionImage, convertMarkdownImages } from './image-utils';
 
 export interface PostSummary {
   id: string;
@@ -154,10 +154,12 @@ export class NotionClient {
         },
       );
 
-      console.log('Notion API response:', {
-        resultsCount: response.results.length,
-        hasMore: response.has_more,
-      });
+      if (import.meta.env.DEV) {
+        console.warn('Notion API response:', {
+          resultsCount: response.results.length,
+          hasMore: response.has_more,
+        });
+      }
 
       const posts: BlogPost[] = [];
 
@@ -167,11 +169,14 @@ export class NotionClient {
         try {
           const post = await this.transformBlogPost(page as PageObjectResponse);
           posts.push(post);
-          console.log('Transformed post:', {
-            title: post.title,
-            published: post.published,
-            slug: post.slug,
-          });
+
+          if (import.meta.env.DEV) {
+            console.warn('Transformed post:', {
+              title: post.title,
+              published: post.published,
+              slug: post.slug,
+            });
+          }
         } catch (error) {
           logError(error, `transformBlogPost ${page.id}`);
         }
@@ -179,9 +184,12 @@ export class NotionClient {
 
       // Published가 true인 포스트만 필터링
       const publishedPosts = posts.filter((post) => post.published);
-      console.log(
-        `Filtered posts: ${publishedPosts.length} published out of ${posts.length} total`,
-      );
+
+      if (import.meta.env.DEV) {
+        console.warn(
+          `Filtered posts: ${publishedPosts.length} published out of ${posts.length} total`,
+        );
+      }
 
       // JavaScript로 날짜순 정렬
       publishedPosts.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
@@ -281,7 +289,12 @@ export class NotionClient {
     try {
       const mdblocks = await this.n2m.pageToMarkdown(pageId);
       const mdString = this.n2m.toMarkdownString(mdblocks);
-      return mdString.parent || '';
+      let content = mdString.parent || '';
+
+      // 남은 이미지 URL 변환 (인라인 이미지 등)
+      content = convertMarkdownImages(content, pageId);
+
+      return content;
     } catch (error) {
       throw new NotionError(`Failed to fetch page content: ${pageId}`, 'FETCH_CONTENT_ERROR');
     }
@@ -387,43 +400,74 @@ export class NotionClient {
     // 코드 블록 변환 개선
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.n2m.setCustomTransformer('code', async (block: any) => {
-      if ('code' in block && block.code) {
-        const code = block.code.rich_text
-          .map((text: RichTextItemResponse) => text.plain_text)
-          .join('');
+      try {
+        if (!block.code) return '';
+
+        const code = block.code.rich_text.map((text: NotionRichText) => text.plain_text).join('');
         const language = block.code.language || 'plaintext';
 
         return `\`\`\`${language}\n${code}\n\`\`\``;
+      } catch (error) {
+        console.error('Code block transform error:', error);
+        return '';
       }
-      return '';
     });
 
     // 이미지 블록 변환
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.n2m.setCustomTransformer('image', async (block: any) => {
-      if ('image' in block && block.image) {
-        const image = block.image;
-        const src =
-          image.type === 'external'
-            ? image.external.url
-            : image.type === 'file'
-              ? image.file.url
-              : '';
-        const caption = image.caption.map((text: RichTextItemResponse) => text.plain_text).join('');
+      try {
+        if (!block.image) return '';
 
-        return caption ? `![${caption}](${src})\n*${caption}*` : `![](${src})`;
+        const image = block.image;
+        let src = '';
+
+        if (image.type === 'external' && image.external) {
+          src = image.external.url;
+        } else if (image.type === 'file' && image.file) {
+          // Notion 내부 이미지를 공개 URL로 변환
+          src = convertToPublicNotionImage(image.file.url, block.id);
+        }
+
+        if (!src) {
+          console.warn('No image URL found in block:', block.id);
+          return '';
+        }
+
+        // 캡션 안전하게 처리
+        const caption = image.caption
+          .map((text: NotionRichText) => escapeHtml(text.plain_text))
+          .join('');
+
+        // 기본 lazy loading과 에러 처리 적용
+        const imgTag = `<img src="${src}" alt="${caption}" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.jpg';" />`;
+
+        return caption
+          ? `<figure class="blog-figure">${imgTag}<figcaption>${caption}</figcaption></figure>`
+          : imgTag;
+      } catch (error) {
+        console.error('Image transform error:', error);
+        return '';
       }
-      return '';
     });
 
     // 북마크 블록 변환
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.n2m.setCustomTransformer('bookmark', async (block: any) => {
-      if ('bookmark' in block && block.bookmark) {
+      try {
+        if (!block.bookmark) return '';
+
         const url = block.bookmark.url;
-        return `[${url}](${url})`;
+        const caption =
+          block.bookmark.caption
+            ?.map((text: NotionRichText) => escapeHtml(text.plain_text))
+            .join('') || url;
+
+        return `[${caption}](${url})`;
+      } catch (error) {
+        console.error('Bookmark transform error:', error);
+        return '';
       }
-      return '';
     });
   }
 
