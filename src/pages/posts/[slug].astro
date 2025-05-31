@@ -1,14 +1,13 @@
 ---
-import ReadingProgress from '@/components/blog/ReadingProgress.astro';
-import TableOfContents from '@/components/blog/TableOfContents.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import TableOfContents from '@/components/blog/TableOfContents.astro';
+import ReadingProgress from '@/components/blog/ReadingProgress.astro';
+import { formatDate } from '@/lib/utils/strings';
 import { getNotionClient } from '@/lib/notion/client';
 import { parseNotionMarkdown } from '@/lib/notion/markdown-parser';
-import { extractFirstImage } from '@/lib/utils/image-extract'; // 추가
-import { formatDate } from '@/lib/utils/strings';
-import '@/styles/blog-content.css';
 import '@/styles/prism-theme.css';
-import { getCollection, type CollectionEntry } from 'astro:content';
+import '@/styles/blog-content.css';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -27,19 +26,10 @@ const { data } = post;
 
 const client = getNotionClient();
 const content = await client.getPageContent(data.id);
-
-// 첫 번째 이미지 추출
-const firstImage = extractFirstImage(content);
-
 const { html: htmlContent, headings } = parseNotionMarkdown(content);
 ---
 
-<BaseLayout
-  title={data.title}
-  description={data.description}
-  type="article"
-  preloadImage={firstImage}
->
+<BaseLayout title={data.title} description={data.description} type="article">
   <ReadingProgress />
 
   <div class="container mx-auto px-4 sm:px-6">
