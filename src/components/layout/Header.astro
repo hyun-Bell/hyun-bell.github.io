@@ -101,9 +101,7 @@ import { SITE_CONFIG, NAV_ITEMS } from '@/lib/constants/site';
     });
   }
 
-  // 초기 로드
+  // 초기 로드 및 페이지 변경 시 업데이트
   updateActiveNav();
-
-  // View Transitions 후 업데이트
-  document.addEventListener('astro:page-load', updateActiveNav);
+  window.addEventListener('DOMContentLoaded', updateActiveNav);
 </script>

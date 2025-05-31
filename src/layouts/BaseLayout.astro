@@ -1,5 +1,4 @@
 ---
-import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
 import ThemeScript from '../components/ThemeScript.astro';
 import Header from '../components/layout/Header.astro';
@@ -44,41 +43,28 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
-
-    <!-- View Transitions -->
-    <ClientRouter />
   </head>
   <body>
     <div
       class="flex min-h-screen flex-col bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100"
     >
-      <!-- 헤더/푸터는 persist로 DOM 재사용 -->
-      <Header transition:persist />
+      <Header />
 
-      <!-- 메인 컨텐츠만 전환 -->
       <main class="container mx-auto flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <slot />
       </main>
 
-      <Footer transition:persist />
+      <Footer />
     </div>
 
     <script>
-      // 최소한의 필수 스크립트만 유지
       import { theme } from '@/lib/theme';
 
-      // 초기화
+      // 테마 초기화
       theme.init();
 
-      // View Transitions 핵심 이벤트만 처리
-      document.addEventListener('astro:after-swap', () => {
-        // 테마 상태만 빠르게 복원
-        const isDark = localStorage.getItem('theme') === 'dark';
-        document.documentElement.classList.toggle('dark', isDark);
-      });
-
-      document.addEventListener('astro:page-load', () => {
-        // 테마 토글 버튼만 재연결
+      // 페이지 로드 시 테마 재초기화
+      window.addEventListener('DOMContentLoaded', () => {
         theme.reinit();
       });
     </script>

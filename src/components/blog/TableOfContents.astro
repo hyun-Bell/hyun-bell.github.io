@@ -9,60 +9,145 @@ export interface Props {
 
 const { headings } = Astro.props;
 
-// h2, h3만 필터링
-const toc = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 3);
+// h2, h3, h4 필터링
+const toc = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 4);
 ---
 
 {
   toc.length > 0 && (
-    <nav class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
-      <h2 class="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-900 dark:text-white">
-        목차
-      </h2>
-      <ul class="space-y-2 text-sm">
-        {toc.map((heading) => (
-          <li class={heading.depth === 3 ? 'ml-4' : ''}>
-            <a
-              href={`#${heading.slug}`}
-              class="block py-1 text-gray-600 transition-colors hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
-              data-toc-link
-            >
-              {heading.text}
-            </a>
-          </li>
-        ))}
-      </ul>
+    <nav id="toc" class="sticky top-24 hidden lg:block" aria-label="목차">
+      <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+        <h2 class="mb-4 font-mono text-sm font-semibold uppercase tracking-wider text-gray-900 dark:text-white">
+          목차
+        </h2>
+        <ul class="space-y-2 text-sm">
+          {toc.map((heading) => {
+            const paddingClass = heading.depth === 2 ? '' : heading.depth === 3 ? 'pl-4' : 'pl-8';
+            const textClass =
+              heading.depth === 2
+                ? 'font-medium'
+                : heading.depth === 3
+                  ? 'text-sm'
+                  : 'text-xs opacity-90';
+
+            return (
+              <li>
+                <a
+                  href={`#${heading.slug}`}
+                  class={`toc-link block py-1.5 text-gray-600 transition-colors hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 ${paddingClass} ${textClass}`}
+                  data-heading-slug={heading.slug}
+                >
+                  {heading.text}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   )
 }
 
+<style>
+  /* 활성 링크 스타일 */
+  .toc-link {
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .toc-link.active {
+    @apply text-primary-600 dark:text-primary-400;
+    padding-left: calc(theme(spacing.4) - 2px);
+  }
+
+  .toc-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: currentColor;
+  }
+
+  /* 스크롤바 커스터마이징 */
+  #toc > div {
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.300') transparent;
+  }
+
+  #toc > div::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  #toc > div::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #toc > div::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600;
+    border-radius: 2px;
+  }
+
+  #toc > div::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+</style>
+
 <script>
-  // 현재 섹션 하이라이트
-  document.addEventListener('DOMContentLoaded', () => {
-    const tocLinks = document.querySelectorAll('[data-toc-link]');
-    const headings = document.querySelectorAll('h2[id], h3[id]');
+  function initTableOfContents() {
+    // 데스크톱에서만 실행
+    if (window.innerWidth < 1024) return;
+
+    const tocLinks = document.querySelectorAll('.toc-link');
+    const headings = document.querySelectorAll('h2[id], h3[id], h4[id]');
 
     if (tocLinks.length === 0 || headings.length === 0) return;
 
+    let currentActiveId: string | null = null;
+
+    // Intersection Observer 설정
     const observerOptions = {
-      rootMargin: '-20% 0px -70% 0px',
+      rootMargin: '-80px 0px -70% 0px',
       threshold: 0,
     };
 
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+    const observerCallback: IntersectionObserverCallback = (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const id = entry.target.getAttribute('id');
+          if (id && id !== currentActiveId) {
+            currentActiveId = id;
 
-          tocLinks.forEach((link) => {
-            link.classList.remove('text-primary-600', 'dark:text-primary-400', 'font-medium');
-            link.classList.add('text-gray-600', 'dark:text-gray-400');
-          });
+            // 모든 링크에서 active 클래스 제거
+            tocLinks.forEach((link) => {
+              link.classList.remove('active');
+            });
 
-          const activeLink = document.querySelector(`[href="#${id}"]`);
-          if (activeLink) {
-            activeLink.classList.remove('text-gray-600', 'dark:text-gray-400');
-            activeLink.classList.add('text-primary-600', 'dark:text-primary-400', 'font-medium');
+            // 현재 섹션의 링크에 active 클래스 추가
+            const activeLink = document.querySelector(`.toc-link[data-heading-slug="${id}"]`);
+            if (activeLink) {
+              activeLink.classList.add('active');
+
+              // 활성 항목이 보이도록 스크롤
+              const container = document.querySelector('#toc > div');
+              if (container) {
+                const linkRect = activeLink.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+
+                if (
+                  linkRect.top < containerRect.top + 20 ||
+                  linkRect.bottom > containerRect.bottom - 20
+                ) {
+                  activeLink.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                  });
+                }
+              }
+            }
           }
         }
       });
@@ -70,5 +155,63 @@ const toc = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 
 
     const observer = new IntersectionObserver(observerCallback, observerOptions);
     headings.forEach((heading) => observer.observe(heading));
+
+    // 목차 링크 클릭 이벤트
+    tocLinks.forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href')?.slice(1);
+        if (targetId) {
+          const targetElement = document.getElementById(targetId);
+          if (targetElement) {
+            const headerHeight = 80;
+            const targetPosition = targetElement.offsetTop - headerHeight;
+
+            window.scrollTo({
+              top: targetPosition,
+              behavior: 'smooth',
+            });
+
+            // URL 해시 업데이트 (히스토리에 추가)
+            history.pushState(null, '', `#${targetId}`);
+          }
+        }
+      });
+    });
+
+    // 페이지 로드 시 해시가 있으면 해당 섹션으로 스크롤
+    if (window.location.hash) {
+      const targetId = window.location.hash.slice(1);
+      const targetElement = document.getElementById(targetId);
+      if (targetElement) {
+        setTimeout(() => {
+          const headerHeight = 80;
+          const targetPosition = targetElement.offsetTop - headerHeight;
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth',
+          });
+        }, 100);
+      }
+    }
+
+    // Cleanup
+    return () => {
+      observer.disconnect();
+    };
+  }
+
+  // 초기화
+  document.addEventListener('DOMContentLoaded', initTableOfContents);
+
+  // 리사이즈 시 재초기화 (데스크톱 전환 시)
+  let resizeTimer: number;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      if (window.innerWidth >= 1024) {
+        initTableOfContents();
+      }
+    }, 250);
   });
 </script>

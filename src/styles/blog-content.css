@@ -1,6 +1,7 @@
 /* 블로그 컨텐츠 스타일 */
 .blog-content {
   @apply text-gray-700 dark:text-gray-300;
+  line-height: 1.8;
 }
 
 /* 제목 스타일 */
@@ -12,23 +13,58 @@
 .blog-content h6 {
   @apply font-bold text-gray-900 dark:text-gray-100;
   @apply mb-4 mt-8;
+  line-height: 1.3;
 }
 
 .blog-content h1 {
-  @apply text-3xl;
+  @apply text-3xl sm:text-4xl;
 }
 
 .blog-content h2 {
-  @apply text-2xl;
+  @apply text-2xl sm:text-3xl;
 }
 
 .blog-content h3 {
-  @apply text-xl;
+  @apply text-xl sm:text-2xl;
+}
+
+.blog-content h4 {
+  @apply text-lg sm:text-xl;
+}
+
+/* 제목 앵커 오프셋 (헤더 높이 고려) */
+.blog-content h2[id],
+.blog-content h3[id],
+.blog-content h4[id] {
+  scroll-margin-top: 5rem;
+}
+
+/* 제목 호버 효과 (데스크톱만) */
+@media (min-width: 1024px) {
+  .blog-content h2[id],
+  .blog-content h3[id],
+  .blog-content h4[id] {
+    @apply relative cursor-pointer;
+  }
+
+  /* 제목 앞에 # 표시 */
+  .blog-content h2[id]::before,
+  .blog-content h3[id]::before,
+  .blog-content h4[id]::before {
+    content: '#';
+    @apply absolute -left-6 text-gray-400 opacity-0 transition-opacity;
+  }
+
+  .blog-content h2[id]:hover::before,
+  .blog-content h3[id]:hover::before,
+  .blog-content h4[id]:hover::before {
+    @apply opacity-100;
+  }
 }
 
 /* 문단 */
 .blog-content p {
-  @apply mb-6 leading-relaxed;
+  @apply mb-6;
 }
 
 /* 링크 */
@@ -36,14 +72,29 @@
   @apply text-blue-600 dark:text-blue-400;
   @apply underline decoration-blue-600/30 dark:decoration-blue-400/30;
   @apply transition-colors hover:text-blue-700 dark:hover:text-blue-300;
+  @apply hover:decoration-blue-700 dark:hover:decoration-blue-300;
 }
 
 /* 인라인 코드 */
-.blog-content .inline-code {
+.blog-content code:not(pre code) {
   @apply rounded px-1.5 py-0.5;
-  @apply bg-gray-100 dark:bg-gray-800;
+  @apply font-mono text-[0.875em];
+  @apply border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800;
   @apply text-pink-600 dark:text-pink-400;
-  @apply font-mono text-sm;
+  font-weight: 500;
+}
+
+/* 코드 블록 */
+.blog-content pre {
+  @apply my-6 overflow-x-auto rounded-lg;
+  @apply border border-gray-200 dark:border-gray-800;
+}
+
+.blog-content pre code {
+  @apply text-sm;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
 /* 리스트 */
@@ -64,38 +115,51 @@
   @apply mb-2;
 }
 
+.blog-content li > ul,
+.blog-content li > ol {
+  @apply mb-2 mt-2;
+}
+
 /* 인용구 */
 .blog-content blockquote {
   @apply border-l-4 border-gray-300 dark:border-gray-700;
-  @apply my-6 py-1 pl-4;
+  @apply my-6 py-1 pl-6 pr-4;
   @apply text-gray-600 dark:text-gray-400;
   @apply italic;
 }
 
+.blog-content blockquote p {
+  @apply mb-0;
+}
+
 /* 이미지 */
 .blog-content img {
-  @apply my-8 rounded-lg;
-  @apply h-auto max-w-full;
+  @apply my-8 rounded-lg shadow-lg;
+  @apply h-auto w-full max-w-full;
 }
 
 /* 테이블 */
 .blog-content table {
-  @apply mb-6 w-full text-sm;
-  @apply border-collapse;
+  @apply mb-6 w-full overflow-hidden rounded-lg text-sm;
+  @apply border border-gray-200 dark:border-gray-700;
 }
 
 .blog-content th,
 .blog-content td {
-  @apply border border-gray-300 dark:border-gray-700;
-  @apply px-4 py-2;
+  @apply border-b border-gray-200 dark:border-gray-700;
+  @apply px-4 py-3;
 }
 
 .blog-content th {
-  @apply bg-gray-100 dark:bg-gray-800;
-  @apply text-left font-semibold;
+  @apply bg-gray-50 dark:bg-gray-800;
+  @apply text-left font-semibold text-gray-900 dark:text-gray-100;
 }
 
-.blog-content tr:nth-child(even) {
+.blog-content tr:last-child td {
+  @apply border-b-0;
+}
+
+.blog-content tbody tr:hover {
   @apply bg-gray-50 dark:bg-gray-900/50;
 }
 
@@ -104,38 +168,51 @@
   @apply my-8 border-gray-300 dark:border-gray-700;
 }
 
-/* 코드 블록 스크롤바 스타일 */
+/* 코드 블록 스크롤바 */
 .blog-content pre::-webkit-scrollbar {
   @apply h-2;
 }
 
 .blog-content pre::-webkit-scrollbar-track {
-  @apply bg-gray-800;
+  @apply bg-gray-100 dark:bg-gray-800;
 }
 
 .blog-content pre::-webkit-scrollbar-thumb {
-  @apply rounded bg-gray-600;
+  @apply rounded bg-gray-300 dark:bg-gray-600;
 }
 
 .blog-content pre::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-500;
+  @apply bg-gray-400 dark:bg-gray-500;
 }
 
-/* 인라인 코드 - 라이트/다크 모드별 색상 강화 */
-.blog-content .inline-code {
-  @apply rounded px-1.5 py-0.5;
-  @apply font-mono text-sm;
-}
+/* 모바일 최적화 */
+@media (max-width: 640px) {
+  .blog-content {
+    font-size: 1rem;
+  }
 
-/* 라이트모드 인라인 코드 */
-:root:not(.dark) .blog-content .inline-code {
-  @apply border border-gray-200 bg-gray-100;
-  @apply text-pink-600;
-  font-weight: 500;
-}
+  .blog-content h1 {
+    @apply text-2xl;
+  }
 
-/* 다크모드 인라인 코드 */
-.dark .blog-content .inline-code {
-  @apply border border-gray-700 bg-gray-800;
-  @apply text-pink-400;
+  .blog-content h2 {
+    @apply text-xl;
+  }
+
+  .blog-content h3 {
+    @apply text-lg;
+  }
+
+  .blog-content h4 {
+    @apply text-base;
+  }
+
+  .blog-content table {
+    font-size: 0.875rem;
+  }
+
+  .blog-content th,
+  .blog-content td {
+    @apply px-3 py-2;
+  }
 }
