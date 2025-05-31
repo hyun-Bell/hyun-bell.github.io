@@ -1,5 +1,3 @@
-/* src/lib/notion/markdown-parser.ts */
-
 import { marked } from 'marked';
 import Prism from 'prismjs';
 import { sanitizeContent } from './sanitizer';
@@ -56,7 +54,6 @@ export function parseNotionMarkdown(markdown: string): string {
     }
   };
 
-  // 인라인 코드
   renderer.codespan = (code: string): string => {
     return `<code class="inline-code">${escapeHtml(code)}</code>`;
   };
@@ -68,14 +65,12 @@ export function parseNotionMarkdown(markdown: string): string {
     return `<a href="${href}" ${attrs}>${text}</a>`;
   };
 
-  // marked 설정
   marked.setOptions({
     renderer,
     gfm: true,
     breaks: true,
   });
 
-  // 동기적으로 처리
   return marked.parse(sanitizedMarkdown) as string;
 }
 
