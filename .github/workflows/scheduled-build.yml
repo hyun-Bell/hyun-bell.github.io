@@ -9,6 +9,12 @@ on:
 
   # 수동 실행 가능
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: 'Force build even if no updates'
+        required: false
+        type: boolean
+        default: false
 
   # Notion 콘텐츠 업데이트 시 수동 트리거용
   repository_dispatch:
@@ -26,45 +32,62 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
 
-      - name: Install dependencies
-        run: |
-          pnpm install
-          # dotenv 설치 (스크립트 실행용)
-          pnpm add -D dotenv
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
 
-      - name: Check Notion updates
+      # Astro 콘텐츠 캐시 복원
+      - name: Restore content cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .astro
+            .notion-last-update.json
+          key: ${{ runner.os }}-astro-content-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-astro-content-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check for Notion updates
         id: check-updates
+        if: github.event.inputs.force_build != 'true'
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
           # 스크립트 실행 및 결과 캡처
-          OUTPUT=$(node scripts/check-notion-updates.js)
+          set +e  # 에러가 나도 계속 진행
+          OUTPUT=$(node scripts/check-notion-updates.js 2>&1)
+          EXIT_CODE=$?
+          set -e
+
           echo "$OUTPUT"
 
-          # GitHub Actions 새로운 출력 방식
-          if echo "$OUTPUT" | grep -q "Updates detected"; then
-            echo "has_updates=true" >> $GITHUB_OUTPUT
+          # 종료 코드로 판단
+          if [ $EXIT_CODE -eq 0 ]; then
+            # 출력에서 업데이트 여부 확인
+            if echo "$OUTPUT" | grep -q "Updates detected"; then
+              echo "has_updates=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_updates=false" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "has_updates=false" >> $GITHUB_OUTPUT
+            # 에러 발생 시 안전하게 빌드 진행
+            echo "Check failed, proceeding with build"
+            echo "has_updates=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Clear cache if updated
-        if: steps.check-updates.outputs.has_updates == 'true'
-        run: pnpm cache:clear
-
-      - name: Build if updated
-        if: steps.check-updates.outputs.has_updates == 'true'
+      - name: Build site
+        if: steps.check-updates.outputs.has_updates == 'true' || github.event.inputs.force_build == 'true'
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
@@ -77,11 +100,15 @@ jobs:
         run: pnpm build
 
       - name: Upload artifact
-        if: steps.check-updates.outputs.has_updates == 'true'
+        if: steps.check-updates.outputs.has_updates == 'true' || github.event.inputs.force_build == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
       - name: Deploy
-        if: steps.check-updates.outputs.has_updates == 'true'
+        if: steps.check-updates.outputs.has_updates == 'true' || github.event.inputs.force_build == 'true'
+        environment:
+          name: github-pages
+          url: ${{ steps.deployment.outputs.page_url }}
+        id: deployment
         uses: actions/deploy-pages@v4
