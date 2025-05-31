@@ -1,3 +1,7 @@
+/**
+ * Notion 클라이언트 구현
+ */
+
 import type { BlogPost, Project, Snippet } from '@/lib/types/notion';
 import { env } from '@/lib/utils/env';
 import { logError, NotionError, retry } from '@/lib/utils/errors';
@@ -35,7 +39,7 @@ export class NotionClient {
   }
 
   /**
-   * 포스트 요약 정보만 가져오기
+   * 포스트 요약 정보만 가져오기 (빠름)
    * 증분 업데이트를 위한 메타데이터만 조회
    */
   async getPostSummaries(): Promise<PostSummary[]> {
@@ -46,11 +50,13 @@ export class NotionClient {
         () =>
           this.client.databases.query({
             database_id: databaseId,
-            filter: {
-              property: 'Published',
-              checkbox: { equals: true },
-            },
             page_size: 100,
+            sorts: [
+              {
+                timestamp: 'last_edited_time',
+                direction: 'descending',
+              },
+            ],
           }),
         {
           maxAttempts: 3,
@@ -67,23 +73,26 @@ export class NotionClient {
         if (!isFullPage(page)) continue;
 
         try {
-          const title = this.getTitle(page.properties) || 'Untitled';
-          const slug = page.id.replace(/-/g, '');
+          // Published 체크
           const published =
             this.getCheckbox(page.properties.Published) ||
             this.getCheckbox(page.properties.게시) ||
             false;
 
-          // 게시된 포스트만 추가
-          if (published) {
-            summaries.push({
-              id: page.id,
-              slug,
-              title,
-              lastModified: page.last_edited_time,
-              published,
-            });
+          if (!published) {
+            continue; // 게시되지 않은 포스트는 건너뛰기
           }
+
+          const title = this.getTitle(page.properties) || 'Untitled';
+          const slug = page.id.replace(/-/g, '');
+
+          summaries.push({
+            id: page.id,
+            slug,
+            title,
+            lastModified: page.last_edited_time,
+            published,
+          });
         } catch (error) {
           logError(error, `transformSummary ${page.id}`);
         }
@@ -174,6 +183,7 @@ export class NotionClient {
         `Filtered posts: ${publishedPosts.length} published out of ${posts.length} total`,
       );
 
+      // JavaScript로 날짜순 정렬
       publishedPosts.sort((a, b) => b.publishDate.getTime() - a.publishDate.getTime());
 
       return publishedPosts;
@@ -488,6 +498,7 @@ export class NotionClient {
   }
 }
 
+// 싱글톤 인스턴스
 let notionClient: NotionClient | null = null;
 
 export function getNotionClient(): NotionClient {

@@ -12,23 +12,34 @@ export default defineConfig({
     }),
   ],
 
-  trailingSlash: 'ignore',
-
-  build: {
-    format: 'directory',
-    inlineStylesheets: 'auto',
-  },
-
   output: 'static',
 
-  contentCollectionCache: true,
+  build: {
+    // 빌드 출력 형식
+    format: 'directory',
 
-  // Vite 최적화
+    // 인라인 스타일 최적화
+    inlineStylesheets: 'auto',
+
+    // 에셋 디렉토리
+    assets: '_astro',
+  },
+
+  // 트레일링 슬래시 처리
+  trailingSlash: 'ignore',
+
+  // Vite 설정
   vite: {
+    // 빌드 캐시 디렉토리
+    cacheDir: '.astro/vite',
+
+    // 최적화
     optimizeDeps: {
       include: ['@notionhq/client', 'notion-to-md'],
     },
+
     build: {
+      // 청크 분할 전략
       rollupOptions: {
         output: {
           manualChunks: {
