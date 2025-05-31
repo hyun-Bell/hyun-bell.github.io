@@ -4,29 +4,35 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import TableOfContents from '@/components/blog/TableOfContents.astro';
 import ReadingProgress from '@/components/blog/ReadingProgress.astro';
 import { formatDate } from '@/lib/utils/strings';
-import { getNotionClient } from '@/lib/notion/client';
 import { parseNotionMarkdown } from '@/lib/notion/markdown-parser';
 import '@/styles/prism-theme.css';
 import '@/styles/blog-content.css';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
-  return posts.map((post) => ({
-    params: { slug: post.data.slug },
-    props: { post },
-  }));
+
+  // 미리 모든 컨텐츠 파싱
+  const postsWithContent = await Promise.all(
+    posts.map(async (post) => {
+      const { html, headings } = parseNotionMarkdown(post.data.content || '');
+      return {
+        params: { slug: post.data.slug },
+        props: { post, htmlContent: html, headings },
+      };
+    }),
+  );
+
+  return postsWithContent;
 }
 
 interface Props {
   post: CollectionEntry<'blog'>;
+  htmlContent: string;
+  headings: Array<{ depth: number; text: string; slug: string }>;
 }
 
-const { post } = Astro.props;
+const { post, htmlContent, headings } = Astro.props;
 const { data } = post;
-
-const client = getNotionClient();
-const content = await client.getPageContent(data.id);
-const { html: htmlContent, headings } = parseNotionMarkdown(content);
 ---
 
 <BaseLayout title={data.title} description={data.description} type="article">
