@@ -114,9 +114,6 @@ importers:
       husky:
         specifier: ^8.0.0
         version: 8.0.3
-      jest:
-        specifier: ^29.7.0
-        version: 29.7.0(@types/node@22.15.21)
       lint-staged:
         specifier: ^16.0.0
         version: 16.0.0
