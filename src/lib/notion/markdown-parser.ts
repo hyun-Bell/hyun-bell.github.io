@@ -2,7 +2,6 @@ import { marked } from 'marked';
 import Prism from 'prismjs';
 import { sanitizeContent } from './sanitizer';
 
-// 지원할 언어들 import
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-jsx';
@@ -14,26 +13,17 @@ import 'prismjs/components/prism-json';
 import 'prismjs/components/prism-yaml';
 import 'prismjs/components/prism-markdown';
 
-/**
- * 제목 정보 타입
- */
 export interface Heading {
   depth: number;
   text: string;
   slug: string;
 }
 
-/**
- * 파싱 결과 타입
- */
 export interface ParseResult {
   html: string;
   headings: Heading[];
 }
 
-/**
- * 텍스트를 slug로 변환
- */
 function createSlug(text: string): string {
   return text
     .toLowerCase()
@@ -43,32 +33,50 @@ function createSlug(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/**
- * Notion 마크다운을 HTML로 변환하고 제목 추출
- */
 export function parseNotionMarkdown(markdown: string): ParseResult {
   const sanitizedMarkdown = sanitizeContent(markdown);
   const headings: Heading[] = [];
 
-  // marked 렌더러 커스터마이징
   const renderer = new marked.Renderer();
 
-  // 제목 렌더링 및 추출
   renderer.heading = (text: string, level: number): string => {
     const slug = createSlug(text);
-
-    // 제목 정보 저장
     headings.push({
       depth: level,
       text,
       slug,
     });
-
-    // id 속성 추가
     return `<h${level} id="${slug}">${text}</h${level}>`;
   };
 
-  // 코드 블록 렌더링 (기존과 동일)
+  // 이미지를 figure/figcaption 구조로 렌더링
+  renderer.image = (href: string, title: string | null, text: string): string => {
+    const altText = text || title || '';
+    const caption = title || text || '';
+
+    return `
+<figure class="blog-figure">
+  <img 
+    src="${href}" 
+    alt="${escapeHtml(altText)}"
+    loading="lazy"
+    decoding="async"
+  />
+  ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
+</figure>`;
+  };
+
+  // 이미지만 있는 단락은 p 태그로 감싸지 않음
+  renderer.paragraph = (text: string): string => {
+    const imageOnlyPattern = /^<figure class="blog-figure">[\s\S]*<\/figure>$/;
+
+    if (imageOnlyPattern.test(text.trim())) {
+      return text;
+    }
+
+    return `<p>${text}</p>`;
+  };
+
   renderer.code = (code: string, language?: string): string => {
     const lang = language ? languageAliases[language] || language : 'plaintext';
 
@@ -94,20 +102,35 @@ export function parseNotionMarkdown(markdown: string): ParseResult {
     return `<a href="${href}" ${attrs}>${text}</a>`;
   };
 
+  renderer.list = (body: string, ordered: boolean, start: number): string => {
+    const type = ordered ? 'ol' : 'ul';
+    const startAttr = ordered && start !== 1 ? ` start="${start}"` : '';
+    return `<${type}${startAttr} class="blog-list">${body}</${type}>`;
+  };
+
+  renderer.table = (header: string, body: string): string => {
+    return `
+      <div class="table-wrapper">
+        <table class="blog-table">
+          <thead>${header}</thead>
+          <tbody>${body}</tbody>
+        </table>
+      </div>
+    `;
+  };
+
   marked.setOptions({
     renderer,
     gfm: true,
     breaks: true,
   });
 
-  const html = marked.parse(sanitizedMarkdown) as string;
+  let html = marked.parse(sanitizedMarkdown) as string;
+  html = html.replace(/(<\/figure>)\s*<p>\s*<\/p>/g, '$1');
 
   return { html, headings };
 }
 
-/**
- * 마크다운에서 제목만 추출 (HTML 변환 없이)
- */
 export function extractHeadings(markdown: string): Heading[] {
   const headings: Heading[] = [];
   const headingRegex = /^(#{1,6})\s+(.+)$/gm;

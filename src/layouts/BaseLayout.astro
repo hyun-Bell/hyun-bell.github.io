@@ -30,13 +30,10 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
 
-    <!-- 테마 스크립트 최우선 실행 -->
     <ThemeScript />
 
-    <!-- SEO -->
     <SEO title={pageTitle} description={description} image={image} type={type} />
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -60,10 +57,8 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
     <script>
       import { theme } from '@/lib/theme';
 
-      // 테마 초기화
       theme.init();
 
-      // 페이지 로드 시 테마 재초기화
       window.addEventListener('DOMContentLoaded', () => {
         theme.reinit();
       });
