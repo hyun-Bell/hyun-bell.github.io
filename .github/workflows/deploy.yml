@@ -36,14 +36,41 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      # Astro 콘텐츠 캐시
-      - name: Restore content cache
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: .astro
-          key: ${{ runner.os }}-astro-content-${{ github.sha }}
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-astro-content-
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Astro build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .astro
+            node_modules/.astro
+            node_modules/.vite
+          key: ${{ runner.os }}-astro-build-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('src/**', 'astro.config.mjs') }}
+          restore-keys: |
+            ${{ runner.os }}-astro-build-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-astro-build-
+
+      - name: Setup Notion content cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .astro/data-store.json
+            .notion-cache
+          key: ${{ runner.os }}-notion-content-${{ hashFiles('.astro/data-store.json') }}
+          restore-keys: |
+            ${{ runner.os }}-notion-content-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -58,7 +85,10 @@ jobs:
           PUBLIC_AUTHOR_NAME: ${{ vars.PUBLIC_AUTHOR_NAME }}
           PUBLIC_AUTHOR_EMAIL: ${{ vars.PUBLIC_AUTHOR_EMAIL }}
           PUBLIC_GITHUB_URL: ${{ vars.PUBLIC_GITHUB_URL }}
-        run: pnpm build
+        run: |
+          echo "🏗️ Building site..."
+          pnpm build
+          echo "✅ Build completed"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
