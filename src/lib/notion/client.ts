@@ -2,16 +2,16 @@
  * Notion 클라이언트 구현
  */
 
-import type { BlogPost, Project, Snippet } from '@/lib/types/notion';
+import type { BlogPost } from '@/lib/types/notion';
 import type { NotionRichText } from '@/lib/types/notion-blocks';
 import { env } from '@/lib/utils/env';
 import { logError, NotionError, retry } from '@/lib/utils/errors';
-import { calculateReadingTime } from '@/lib/utils/strings';
 import { escapeHtml } from '@/lib/utils/security';
+import { calculateReadingTime } from '@/lib/utils/strings';
 import { Client, isFullPage } from '@notionhq/client';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { NotionToMarkdown } from 'notion-to-md';
-import { convertToPublicNotionImage, convertMarkdownImages } from './image-utils';
+import { convertMarkdownImages, convertToPublicNotionImage } from './image-utils';
 
 export interface PostSummary {
   id: string;
@@ -201,88 +201,6 @@ export class NotionClient {
   }
 
   /**
-   * 프로젝트 목록 가져오기
-   */
-  async getProjects(): Promise<Project[]> {
-    try {
-      const databaseId = env.NOTION_PROJECTS_DATABASE_ID();
-      if (!databaseId) return [];
-
-      const response = await retry(
-        () =>
-          this.client.databases.query({
-            database_id: databaseId,
-            sorts: [
-              {
-                property: 'StartDate',
-                direction: 'descending',
-              },
-            ],
-          }),
-        { maxAttempts: 3 },
-      );
-
-      const projects: Project[] = [];
-
-      for (const page of response.results) {
-        if (!isFullPage(page)) continue;
-
-        try {
-          const project = await this.transformProject(page as PageObjectResponse);
-          projects.push(project);
-        } catch (error) {
-          logError(error, `transformProject ${page.id}`);
-        }
-      }
-
-      return projects;
-    } catch (error) {
-      throw new NotionError('Failed to fetch projects', 'FETCH_PROJECTS_ERROR');
-    }
-  }
-
-  /**
-   * 코드 스니펫 목록 가져오기
-   */
-  async getSnippets(): Promise<Snippet[]> {
-    try {
-      const databaseId = env.NOTION_SNIPPETS_DATABASE_ID();
-      if (!databaseId) return [];
-
-      const response = await retry(
-        () =>
-          this.client.databases.query({
-            database_id: databaseId,
-            sorts: [
-              {
-                property: 'Title',
-                direction: 'ascending',
-              },
-            ],
-          }),
-        { maxAttempts: 3 },
-      );
-
-      const snippets: Snippet[] = [];
-
-      for (const page of response.results) {
-        if (!isFullPage(page)) continue;
-
-        try {
-          const snippet = this.transformSnippet(page as PageObjectResponse);
-          snippets.push(snippet);
-        } catch (error) {
-          logError(error, `transformSnippet ${page.id}`);
-        }
-      }
-
-      return snippets;
-    } catch (error) {
-      throw new NotionError('Failed to fetch snippets', 'FETCH_SNIPPETS_ERROR');
-    }
-  }
-
-  /**
    * 페이지 콘텐츠 가져오기
    */
   async getPageContent(pageId: string): Promise<string> {
@@ -350,46 +268,6 @@ export class NotionClient {
       author: authorValue || 'Anonymous',
       content,
       readingTime: calculateReadingTime(content),
-    };
-  }
-
-  /**
-   * 프로젝트 변환
-   */
-  private async transformProject(page: PageObjectResponse): Promise<Project> {
-    const props = page.properties;
-
-    const name = this.getTitle(props) || 'Untitled';
-    const content = await this.getPageContent(page.id);
-
-    return {
-      id: page.id,
-      name,
-      description: this.getRichText(props.Description) || '',
-      status: (this.getSelect(props.Status) as Project['status']) || 'Planned',
-      techStack: this.getMultiSelect(props.TechStack) || [],
-      githubUrl: this.getUrl(props.GitHubURL) || undefined,
-      liveUrl: this.getUrl(props.LiveURL) || undefined,
-      startDate: this.getDate(props.StartDate)
-        ? new Date(this.getDate(props.StartDate)!)
-        : undefined,
-      endDate: this.getDate(props.EndDate) ? new Date(this.getDate(props.EndDate)!) : undefined,
-      content,
-    };
-  }
-
-  /**
-   * 코드 스니펫 변환
-   */
-  private transformSnippet(page: PageObjectResponse): Snippet {
-    const props = page.properties;
-
-    return {
-      id: page.id,
-      title: this.getTitle(props) || 'Untitled',
-      language: this.getSelect(props.Language) || undefined,
-      tags: this.getMultiSelect(props.Tags) || [],
-      description: this.getRichText(props.Description) || undefined,
     };
   }
 
@@ -517,28 +395,12 @@ export class NotionClient {
     return null;
   }
 
-  private getSelect(prop: unknown): string | null {
-    if (prop && typeof prop === 'object' && 'select' in prop) {
-      const selectProp = prop as { select: { name: string } | null };
-      return selectProp.select?.name || null;
-    }
-    return null;
-  }
-
   private getMultiSelect(prop: unknown): string[] {
     if (prop && typeof prop === 'object' && 'multi_select' in prop) {
       const multiSelectProp = prop as { multi_select: Array<{ name: string }> };
       return multiSelectProp.multi_select?.map((item) => item.name) || [];
     }
     return [];
-  }
-
-  private getUrl(prop: unknown): string | null {
-    if (prop && typeof prop === 'object' && 'url' in prop) {
-      const urlProp = prop as { url: string | null };
-      return urlProp.url || null;
-    }
-    return null;
   }
 }
 

@@ -36,9 +36,6 @@ export const env = {
   // Notion
   NOTION_TOKEN: () => getRequiredEnv('NOTION_TOKEN'),
   NOTION_DATABASE_ID: () => getRequiredEnv('NOTION_DATABASE_ID'),
-  NOTION_PAGES_DATABASE_ID: () => getOptionalEnv('NOTION_PAGES_DATABASE_ID'),
-  NOTION_PROJECTS_DATABASE_ID: () => getOptionalEnv('NOTION_PROJECTS_DATABASE_ID'),
-  NOTION_SNIPPETS_DATABASE_ID: () => getOptionalEnv('NOTION_SNIPPETS_DATABASE_ID'),
 
   // Site
   PUBLIC_SITE_URL: () => getRequiredEnv('PUBLIC_SITE_URL'),
@@ -47,12 +44,10 @@ export const env = {
   PUBLIC_AUTHOR_NAME: () => getOptionalEnv('PUBLIC_AUTHOR_NAME', 'Anonymous'),
   PUBLIC_AUTHOR_EMAIL: () => getRequiredEnv('PUBLIC_AUTHOR_EMAIL'),
 
-  // Social
+  // Social (Optional)
   PUBLIC_GITHUB_URL: () => getOptionalEnv('PUBLIC_GITHUB_URL'),
-  PUBLIC_TWITTER_URL: () => getOptionalEnv('PUBLIC_TWITTER_URL'),
-  PUBLIC_LINKEDIN_URL: () => getOptionalEnv('PUBLIC_LINKEDIN_URL'),
 
-  // Analytics
+  // Analytics (Optional)
   PUBLIC_GA_ID: () => getOptionalEnv('PUBLIC_GA_ID'),
 
   // Build
@@ -71,7 +66,6 @@ export function validateEnv(): void {
     'PUBLIC_SITE_URL',
     'PUBLIC_SITE_TITLE',
     'PUBLIC_SITE_DESCRIPTION',
-    'PUBLIC_AUTHOR_NAME',
     'PUBLIC_AUTHOR_EMAIL',
   ];
 

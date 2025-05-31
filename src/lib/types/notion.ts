@@ -54,78 +54,6 @@ export interface NotionBlogPost extends NotionPage {
   };
 }
 
-// 프로젝트 속성
-export interface NotionProject extends NotionPage {
-  properties: {
-    Name: {
-      title: Array<{
-        plain_text: string;
-      }>;
-    };
-    Description: {
-      rich_text: Array<{
-        plain_text: string;
-      }>;
-    };
-    Status: {
-      select: {
-        name: 'In Progress' | 'Completed' | 'Planned';
-        color: string;
-      } | null;
-    };
-    TechStack: {
-      multi_select: Array<{
-        name: string;
-        color: string;
-      }>;
-    };
-    GitHubURL?: {
-      url: string | null;
-    };
-    LiveURL?: {
-      url: string | null;
-    };
-    StartDate?: {
-      date: {
-        start: string;
-      } | null;
-    };
-    EndDate?: {
-      date: {
-        start: string;
-      } | null;
-    };
-  };
-}
-
-// 코드 스니펫 속성
-export interface NotionSnippet extends NotionPage {
-  properties: {
-    Title: {
-      title: Array<{
-        plain_text: string;
-      }>;
-    };
-    Language: {
-      select: {
-        name: string;
-        color: string;
-      } | null;
-    };
-    Tags: {
-      multi_select: Array<{
-        name: string;
-        color: string;
-      }>;
-    };
-    Description?: {
-      rich_text: Array<{
-        plain_text: string;
-      }>;
-    };
-  };
-}
-
 // 블록 타입 정의
 export type NotionBlock = {
   id: string;
@@ -148,26 +76,4 @@ export interface BlogPost {
   author?: string | undefined;
   content?: string | undefined; // HTML로 변환된 컨텐츠
   readingTime?: number | undefined; // 읽기 시간 (분)
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'In Progress' | 'Completed' | 'Planned';
-  techStack: string[];
-  githubUrl?: string | undefined;
-  liveUrl?: string | undefined;
-  startDate?: Date | undefined;
-  endDate?: Date | undefined;
-  content?: string | undefined;
-}
-
-export interface Snippet {
-  id: string;
-  title: string;
-  language?: string | undefined;
-  tags: string[];
-  description?: string | undefined;
-  code?: string | undefined;
 }

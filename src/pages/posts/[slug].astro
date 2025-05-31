@@ -3,7 +3,7 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import TableOfContents from '@/components/blog/TableOfContents.astro';
 import ReadingProgress from '@/components/blog/ReadingProgress.astro';
-import { formatDate } from '@/lib/utils/date';
+import { formatDate } from '@/lib/utils/strings';
 import { getNotionClient } from '@/lib/notion/client';
 import { parseNotionMarkdown } from '@/lib/notion/markdown-parser';
 import '@/styles/prism-theme.css';

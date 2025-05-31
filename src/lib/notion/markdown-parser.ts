@@ -1,6 +1,5 @@
 import { marked } from 'marked';
 import Prism from 'prismjs';
-import { sanitizeContent } from './sanitizer';
 
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-javascript';
@@ -34,7 +33,6 @@ function createSlug(text: string): string {
 }
 
 export function parseNotionMarkdown(markdown: string): ParseResult {
-  const sanitizedMarkdown = sanitizeContent(markdown);
   const headings: Heading[] = [];
 
   const renderer = new marked.Renderer();
@@ -125,7 +123,7 @@ export function parseNotionMarkdown(markdown: string): ParseResult {
     breaks: true,
   });
 
-  let html = marked.parse(sanitizedMarkdown) as string;
+  let html = marked.parse(markdown) as string;
   html = html.replace(/(<\/figure>)\s*<p>\s*<\/p>/g, '$1');
 
   return { html, headings };
