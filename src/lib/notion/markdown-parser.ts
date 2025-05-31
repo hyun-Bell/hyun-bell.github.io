@@ -11,6 +11,7 @@ import 'prismjs/components/prism-bash';
 import 'prismjs/components/prism-json';
 import 'prismjs/components/prism-yaml';
 import 'prismjs/components/prism-markdown';
+import { extractFirstImage } from '../utils/image-extract';
 
 export interface Heading {
   depth: number;
@@ -34,6 +35,8 @@ function createSlug(text: string): string {
 
 export function parseNotionMarkdown(markdown: string): ParseResult {
   const headings: Heading[] = [];
+  const firstImage = extractFirstImage(markdown);
+  let imageCount = 0;
 
   const renderer = new marked.Renderer();
 
@@ -51,13 +54,17 @@ export function parseNotionMarkdown(markdown: string): ParseResult {
   renderer.image = (href: string, title: string | null, text: string): string => {
     const altText = text || title || '';
     const caption = title || text || '';
+    imageCount++;
+
+    const isFirstImage = imageCount === 1 && href === firstImage;
 
     return `
 <figure class="blog-figure">
   <img 
     src="${href}" 
     alt="${escapeHtml(altText)}"
-    loading="lazy"
+    loading="${isFirstImage ? 'eager' : 'lazy'}"
+    ${isFirstImage ? 'fetchpriority="high"' : ''}
     decoding="async"
   />
   ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
