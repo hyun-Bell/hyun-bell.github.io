@@ -28,6 +28,8 @@ permissions:
 jobs:
   check-and-build:
     runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check-updates.outputs.has_updates == 'true' || github.event.inputs.force_build == 'true' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -105,10 +107,14 @@ jobs:
         with:
           path: ./dist
 
-      - name: Deploy
-        if: steps.check-updates.outputs.has_updates == 'true' || github.event.inputs.force_build == 'true'
-        environment:
-          name: github-pages
-          url: ${{ steps.deployment.outputs.page_url }}
+  deploy:
+    needs: check-and-build
+    if: needs.check-and-build.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
