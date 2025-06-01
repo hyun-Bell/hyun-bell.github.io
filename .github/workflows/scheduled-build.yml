@@ -1,13 +1,11 @@
 name: Scheduled Content Update
 
 on:
-  # 매일 정해진 시간에 자동으로 실행
   schedule:
     - cron: '0 0 * * *' # UTC 0시 = KST 오전 9시
     - cron: '0 8 * * *' # UTC 8시 = KST 오후 5시
     - cron: '0 15 * * *' # UTC 15시 = KST 오전 0시
 
-  # 수동 실행 가능
   workflow_dispatch:
     inputs:
       force_build:
@@ -16,7 +14,6 @@ on:
         type: boolean
         default: false
 
-  # Notion 콘텐츠 업데이트 시 수동 트리거용
   repository_dispatch:
     types: [content-update]
 
@@ -45,16 +42,45 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
-      # Astro 콘텐츠 캐시 복원
-      - name: Restore content cache
+      # pnpm store 캐시
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # Astro 빌드 캐시
+      - name: Setup Astro build cache
         uses: actions/cache@v4
         with:
           path: |
             .astro
-            .notion-last-update.json
-          key: ${{ runner.os }}-astro-content-${{ github.sha }}
+            node_modules/.astro
+            node_modules/.vite
+          key: ${{ runner.os }}-astro-build-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('src/**', 'astro.config.mjs') }}
           restore-keys: |
-            ${{ runner.os }}-astro-content-
+            ${{ runner.os }}-astro-build-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-astro-build-
+
+      # Notion 콘텐츠 캐시
+      - name: Setup Notion content cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .astro/data-store.json
+            .notion-cache
+            .notion-last-update.json
+          key: ${{ runner.os }}-notion-content-${{ hashFiles('.notion-last-update.json') }}
+          restore-keys: |
+            ${{ runner.os }}-notion-content-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -66,24 +92,20 @@ jobs:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         run: |
-          # 스크립트 실행 및 결과 캡처
-          set +e  # 에러가 나도 계속 진행
+          set +e
           OUTPUT=$(node scripts/check-notion-updates.js 2>&1)
           EXIT_CODE=$?
           set -e
 
           echo "$OUTPUT"
 
-          # 종료 코드로 판단
           if [ $EXIT_CODE -eq 0 ]; then
-            # 출력에서 업데이트 여부 확인
             if echo "$OUTPUT" | grep -q "Updates detected"; then
               echo "has_updates=true" >> $GITHUB_OUTPUT
             else
               echo "has_updates=false" >> $GITHUB_OUTPUT
             fi
           else
-            # 에러 발생 시 안전하게 빌드 진행
             echo "Check failed, proceeding with build"
             echo "has_updates=true" >> $GITHUB_OUTPUT
           fi
@@ -99,9 +121,23 @@ jobs:
           PUBLIC_AUTHOR_NAME: ${{ vars.PUBLIC_AUTHOR_NAME }}
           PUBLIC_AUTHOR_EMAIL: ${{ vars.PUBLIC_AUTHOR_EMAIL }}
           PUBLIC_GITHUB_URL: ${{ vars.PUBLIC_GITHUB_URL }}
-        run: pnpm build
+        run: |
+          echo "🏗️ Building site..."
+          pnpm build
+          echo "✅ Build completed"
 
-      - name: Upload artifact
+      # 캐시 저장을 위한 아티팩트 업로드
+      - name: Save cache artifacts
+        if: steps.check-updates.outputs.has_updates == 'true' || github.event.inputs.force_build == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: astro-cache
+          path: |
+            .astro/data-store.json
+            .notion-last-update.json
+          retention-days: 7
+
+      - name: Upload pages artifact
         if: steps.check-updates.outputs.has_updates == 'true' || github.event.inputs.force_build == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
