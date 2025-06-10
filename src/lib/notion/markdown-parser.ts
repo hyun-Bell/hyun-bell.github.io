@@ -36,6 +36,9 @@ export function parseNotionMarkdown(markdown: string): ParseResult {
   const headings: Heading[] = [];
   let isFirstImage = true;
 
+  // HTML 엔티티 디코딩으로 이중 인코딩 방지
+  const decodedMarkdown = decodeHtmlEntities(markdown);
+
   const renderer = new marked.Renderer();
 
   renderer.heading = (text: string, level: number): string => {
@@ -133,7 +136,7 @@ export function parseNotionMarkdown(markdown: string): ParseResult {
     breaks: true,
   });
 
-  let html = marked.parse(markdown) as string;
+  let html = marked.parse(decodedMarkdown) as string;
   html = html.replace(/(<\/figure>)\s*<p>\s*<\/p>/g, '$1');
 
   return { html, headings };
@@ -166,6 +169,26 @@ function escapeHtml(text: string): string {
     "'": '&#039;',
   };
   return text.replace(/[&<>"']/g, (m) => map[m] || m);
+}
+
+/**
+ * HTML 엔티티를 디코딩하여 이중 인코딩 방지
+ * Meta의 HTML 처리 패턴을 따름
+ */
+function decodeHtmlEntities(text: string): string {
+  const entityMap: Record<string, string> = {
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#039;': "'",
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#x60;': '`',
+    '&#x3D;': '=',
+  };
+  
+  return text.replace(/&[#\w]+;/g, (entity) => entityMap[entity] || entity);
 }
 
 const languageAliases: Record<string, string> = {

@@ -6,7 +6,6 @@ import type { BlogPost } from '@/lib/types/notion';
 import type { NotionRichText } from '@/lib/types/notion-blocks';
 import { env } from '@/lib/utils/env';
 import { logError, NotionError, retry } from '@/lib/utils/errors';
-import { escapeHtml } from '@/lib/utils/security';
 import { calculateReadingTime } from '@/lib/utils/strings';
 import { Client, isFullPage } from '@notionhq/client';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
@@ -312,9 +311,9 @@ export class NotionClient {
           return '';
         }
 
-        // 캡션 안전하게 처리
+        // 캡션 처리 (마크다운 파서에서 이스케이프 처리되므로 여기서는 raw text 사용)
         const caption = image.caption
-          .map((text: NotionRichText) => escapeHtml(text.plain_text))
+          .map((text: NotionRichText) => text.plain_text)
           .join('');
 
         // 기본 lazy loading과 에러 처리 적용
@@ -338,7 +337,7 @@ export class NotionClient {
         const url = block.bookmark.url;
         const caption =
           block.bookmark.caption
-            ?.map((text: NotionRichText) => escapeHtml(text.plain_text))
+            ?.map((text: NotionRichText) => text.plain_text)
             .join('') || url;
 
         return `[${caption}](${url})`;
