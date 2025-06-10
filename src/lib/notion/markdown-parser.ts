@@ -38,6 +38,24 @@ export function parseNotionMarkdown(markdown: string): ParseResult {
 
   // HTML 엔티티 디코딩으로 이중 인코딩 방지
   const decodedMarkdown = decodeHtmlEntities(markdown);
+  
+  // Meta 스타일 디버깅: 실제 변환 확인 (빌드/개발 모드 모두)
+  const hasEntities = markdown.includes('&#39;') || markdown.includes('&#039;');
+  const decodingWorked = !decodedMarkdown.includes('&#39;') && !decodedMarkdown.includes('&#039;');
+  
+  if (hasEntities) {
+    console.warn('🔍 HTML Entity Processing:', {
+      mode: import.meta.env.DEV ? 'DEV' : 'BUILD',
+      originalLength: markdown.length,
+      decodedLength: decodedMarkdown.length,
+      hadEntities: hasEntities,
+      decodingWorked: decodingWorked,
+      sample: {
+        before: markdown.substring(0, 60),
+        after: decodedMarkdown.substring(0, 60)
+      }
+    });
+  }
 
   const renderer = new marked.Renderer();
 
@@ -139,6 +157,14 @@ export function parseNotionMarkdown(markdown: string): ParseResult {
   let html = marked.parse(decodedMarkdown) as string;
   html = html.replace(/(<\/figure>)\s*<p>\s*<\/p>/g, '$1');
 
+  // Meta 스타일 최종 안전 장치: 혹시 놓친 HTML 엔티티 처리
+  html = html.replace(/&#39;/g, "'").replace(/&#039;/g, "'");
+  
+  // 최종 검증
+  if (html.includes('&#39;') || html.includes('&#039;')) {
+    console.warn('⚠️ HTML entities still present in final output');
+  }
+
   return { html, headings };
 }
 
@@ -173,9 +199,10 @@ function escapeHtml(text: string): string {
 
 /**
  * HTML 엔티티를 디코딩하여 이중 인코딩 방지
- * Meta의 HTML 처리 패턴을 따름
+ * Meta의 HTML 처리 패턴을 따름 - 네이티브 브라우저 API 활용
  */
 function decodeHtmlEntities(text: string): string {
+  // Meta 스타일: 서버 환경에서 안전한 HTML 엔티티 디코딩
   const entityMap: Record<string, string> = {
     '&amp;': '&',
     '&lt;': '<',
@@ -189,8 +216,28 @@ function decodeHtmlEntities(text: string): string {
     '&#x3D;': '=',
   };
   
-  // Meta 스타일: 알파벳, 숫자, # 기호를 모두 포함하는 정규식
-  return text.replace(/&[#a-zA-Z0-9]+;/g, (entity) => entityMap[entity] || entity);
+  // 1차: 맵 기반 디코딩
+  let decoded = text.replace(/&[#a-zA-Z0-9]+;/g, (entity) => entityMap[entity] || entity);
+  
+  // 2차: 숫자 기반 HTML 엔티티 디코딩 (더 포괄적)
+  decoded = decoded.replace(/&#(\d+);/g, (match, num) => {
+    const code = parseInt(num, 10);
+    if (code > 0 && code < 1114112) { // 유효한 유니코드 범위
+      return String.fromCharCode(code);
+    }
+    return match;
+  });
+  
+  // 3차: 16진수 기반 HTML 엔티티 디코딩
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+    const code = parseInt(hex, 16);
+    if (code > 0 && code < 1114112) { // 유효한 유니코드 범위
+      return String.fromCharCode(code);
+    }
+    return match;
+  });
+  
+  return decoded;
 }
 
 const languageAliases: Record<string, string> = {

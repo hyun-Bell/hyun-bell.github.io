@@ -208,6 +208,16 @@ export class NotionClient {
       const mdString = this.n2m.toMarkdownString(mdblocks);
       let content = mdString.parent || '';
 
+      // Meta 스타일 디버깅: Notion에서 실제 넘어오는 콘텐츠 확인
+      if (import.meta.env.DEV && content.includes('&#39;')) {
+        console.warn('🔍 Notion Content Debug:', {
+          pageId: pageId.substring(0, 8),
+          hasEntities: content.includes('&#39;'),
+          sample: content.substring(0, 200),
+          entityCount: (content.match(/&#39;/g) || []).length
+        });
+      }
+
       // 남은 이미지 URL 변환 (인라인 이미지 등)
       content = convertMarkdownImages(content, pageId);
 

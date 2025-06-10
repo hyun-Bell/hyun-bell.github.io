@@ -14,7 +14,28 @@ export async function getStaticPaths() {
   // 미리 모든 컨텐츠 파싱
   const postsWithContent = await Promise.all(
     posts.map(async (post) => {
-      const { html, headings } = parseNotionMarkdown(post.data.content || '');
+      // Meta 스타일 디버깅: 실제 콘텐츠 상태 확인
+      const rawContent = post.data.content || '';
+      
+      if (import.meta.env.DEV && rawContent.includes('&#39;')) {
+        console.warn('🔍 Raw Content Debug:', {
+          slug: post.data.slug,
+          hasEntities: rawContent.includes('&#39;'),
+          sample: rawContent.substring(0, 150),
+          entityCount: (rawContent.match(/&#39;/g) || []).length
+        });
+      }
+      
+      const { html, headings } = parseNotionMarkdown(rawContent);
+      
+      if (import.meta.env.DEV && rawContent.includes('&#39;')) {
+        console.warn('🔍 Processed HTML Debug:', {
+          slug: post.data.slug,
+          stillHasEntities: html.includes('&#39;'),
+          htmlSample: html.substring(0, 150)
+        });
+      }
+      
       return {
         params: { slug: post.data.slug },
         props: { post, htmlContent: html, headings },
