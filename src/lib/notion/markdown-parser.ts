@@ -181,14 +181,16 @@ function decodeHtmlEntities(text: string): string {
     '&lt;': '<',
     '&gt;': '>',
     '&quot;': '"',
-    '&#039;': "'",
+    '&#39;': "'",      // 실제 Notion에서 사용하는 형태
+    '&#039;': "'",     // 0이 포함된 형태도 지원
     '&#x27;': "'",
     '&#x2F;': '/',
     '&#x60;': '`',
     '&#x3D;': '=',
   };
   
-  return text.replace(/&[#\w]+;/g, (entity) => entityMap[entity] || entity);
+  // Meta 스타일: 알파벳, 숫자, # 기호를 모두 포함하는 정규식
+  return text.replace(/&[#a-zA-Z0-9]+;/g, (entity) => entityMap[entity] || entity);
 }
 
 const languageAliases: Record<string, string> = {
