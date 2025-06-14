@@ -13,14 +13,4 @@ const isDev = import.meta.env.DEV;
 const shouldLoadScript = !isDev && websiteId && src;
 ---
 
-{
-  shouldLoadScript && (
-    <script
-      is:inline
-      defer
-      src={src}
-      data-website-id={websiteId}
-      data-domains="hyunbell.github.io"
-    />
-  )
-}
+{shouldLoadScript && <script defer src={src} data-website-id={websiteId} />}
