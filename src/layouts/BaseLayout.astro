@@ -4,6 +4,7 @@ import ThemeScript from '../components/common/ThemeScript.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import SEO from '../components/common/SEO.astro';
+import CopyCodeScript from '../components/common/CopyCodeScript.astro';
 import Analytics from '../components/common/Analytics.astro';
 import { SITE_CONFIG } from '@/lib/constants/site';
 
@@ -135,6 +136,7 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
       </main>
       <Footer />
     </div>
+    <CopyCodeScript />
 
     <script>
       import { theme } from '@/lib/theme';
