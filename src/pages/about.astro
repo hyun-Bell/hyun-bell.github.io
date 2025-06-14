@@ -1,0 +1,77 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="About | hyunBell.dev" description="hyunBell 소개">
+  <div class="mx-auto max-w-3xl">
+    <article class="prose prose-lg mx-auto dark:prose-invert">
+      <header class="mb-12 text-center">
+        <div class="profile-container">
+          <img
+            src="/images/me.jpeg"
+            alt="hyun-bell profile"
+            class="profile-image"
+            width="200"
+            height="200"
+            loading="eager"
+            fetchpriority="high"
+          />
+        </div>
+        <h1 class="mb-4 font-mono text-4xl font-bold">
+          <span class="text-blue-600 dark:text-blue-400">_</span>
+          About
+        </h1>
+      </header>
+
+      <div class="about-content">
+        <h2>hyun-bell</h2>
+        <p class="text-lg text-gray-600 dark:text-gray-400">
+          개발자로서 성장하며 배운 것들을 기록하고 공유합니다.
+        </p>
+      </div>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .profile-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .profile-image {
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #e5e7eb;
+    transition:
+      transform 0.2s ease-in-out,
+      box-shadow 0.2s ease-in-out;
+  }
+
+  .profile-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  :global(.dark) .profile-image {
+    border-color: #374151;
+  }
+
+  .about-content {
+    text-align: center;
+    margin-top: 2rem;
+  }
+
+  .about-content h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+
+  :global(.dark) .about-content h2 {
+    color: #f9fafb;
+  }
+</style>
