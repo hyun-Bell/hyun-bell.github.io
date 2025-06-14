@@ -217,6 +217,7 @@ export class NotionClient {
     }
   }
 
+
   /**
    * 블로그 포스트 변환
    */
@@ -314,8 +315,8 @@ export class NotionClient {
         // 캡션 처리
         const caption = image.caption.map((text: NotionRichText) => text.plain_text).join('');
 
-        // 기본 lazy loading과 에러 처리 적용
-        const imgTag = `<img src="${src}" alt="${caption}" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.jpg';" />`;
+        // 이미지 태그에 블록 ID 포함
+        const imgTag = `<img src="${src}" alt="${caption}" data-block-id="${block.id}" loading="lazy" />`;
 
         return caption
           ? `<figure class="blog-figure">${imgTag}<figcaption>${caption}</figcaption></figure>`
