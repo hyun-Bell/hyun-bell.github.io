@@ -17,7 +17,6 @@
     scroll-behavior: smooth;
   }
 
-  /* 폰트 최적화 */
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
