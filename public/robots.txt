@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# 사이트맵 위치
+Sitemap: https://hyun-bell.github.io/sitemap.xml
+
+# 크롤링 제외 경로
+Disallow: /_astro/
+Disallow: /api/
+Disallow: /*.json
+Disallow: /scripts/
+
+# 검색 엔진별 크롤링 딜레이 (초)
+Crawl-delay: 1
