@@ -17,7 +17,11 @@
     "clean:all": "astro clean && rm -rf node_modules",
     "notion:check": "node scripts/check-notion-properties.js",
     "sync:check": "node scripts/check-sync.js",
-    "sync:status": "node scripts/sync-status.js"
+    "sync:status": "node scripts/sync-status.js",
+    "test:images": "node scripts/test-image-processing.js",
+    "debug:images": "node src/scripts/debug-images.js",
+    "image:cleanup": "node scripts/cleanup-image-cache.js",
+    "image:cleanup:force": "node scripts/cleanup-image-cache.js 7"
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [
