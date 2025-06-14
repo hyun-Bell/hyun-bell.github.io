@@ -1,5 +1,7 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
+import remarkGfm from 'remark-gfm';
+import rehypePrismPlus from 'rehype-prism-plus';
 
 // https://astro.build/config
 export default defineConfig({
@@ -27,6 +29,24 @@ export default defineConfig({
 
   // 트레일링 슬래시 처리
   trailingSlash: 'ignore',
+
+  // Markdown 설정
+  markdown: {
+    remarkPlugins: [remarkGfm],
+    rehypePlugins: [
+      [
+        rehypePrismPlus,
+        {
+          ignoreMissing: true,
+          defaultLanguage: 'plaintext',
+        },
+      ],
+    ],
+    shikiConfig: {
+      theme: 'github-dark',
+      wrap: true,
+    },
+  },
 
   // Vite 설정
   vite: {
