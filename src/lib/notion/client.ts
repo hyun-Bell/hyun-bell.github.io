@@ -208,16 +208,6 @@ export class NotionClient {
       const mdString = this.n2m.toMarkdownString(mdblocks);
       let content = mdString.parent || '';
 
-      // Meta 스타일 디버깅: Notion에서 실제 넘어오는 콘텐츠 확인
-      if (import.meta.env.DEV && content.includes('&#39;')) {
-        console.warn('🔍 Notion Content Debug:', {
-          pageId: pageId.substring(0, 8),
-          hasEntities: content.includes('&#39;'),
-          sample: content.substring(0, 200),
-          entityCount: (content.match(/&#39;/g) || []).length
-        });
-      }
-
       // 남은 이미지 URL 변환 (인라인 이미지 등)
       content = convertMarkdownImages(content, pageId);
 
@@ -321,10 +311,8 @@ export class NotionClient {
           return '';
         }
 
-        // 캡션 처리 (마크다운 파서에서 이스케이프 처리되므로 여기서는 raw text 사용)
-        const caption = image.caption
-          .map((text: NotionRichText) => text.plain_text)
-          .join('');
+        // 캡션 처리
+        const caption = image.caption.map((text: NotionRichText) => text.plain_text).join('');
 
         // 기본 lazy loading과 에러 처리 적용
         const imgTag = `<img src="${src}" alt="${caption}" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.jpg';" />`;
@@ -346,9 +334,7 @@ export class NotionClient {
 
         const url = block.bookmark.url;
         const caption =
-          block.bookmark.caption
-            ?.map((text: NotionRichText) => text.plain_text)
-            .join('') || url;
+          block.bookmark.caption?.map((text: NotionRichText) => text.plain_text).join('') || url;
 
         return `[${caption}](${url})`;
       } catch (error) {

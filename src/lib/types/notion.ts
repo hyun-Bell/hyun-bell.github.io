@@ -2,13 +2,21 @@
  * Notion API 관련 타입 정의
  */
 
-// Notion Page 기본 속성
 export interface NotionPage {
   id: string;
   created_time: string;
   last_edited_time: string;
   archived: boolean;
   properties: Record<string, unknown>;
+}
+
+export interface ImageInfo {
+  url: string;
+  alt: string;
+  width: number;
+  height: number;
+  caption: string;
+  blurDataURL: string;
 }
 
 // 블로그 포스트 속성
@@ -76,4 +84,5 @@ export interface BlogPost {
   author?: string | undefined;
   content?: string | undefined; // HTML로 변환된 컨텐츠
   readingTime?: number | undefined; // 읽기 시간 (분)
+  images?: ImageInfo[];
 }
