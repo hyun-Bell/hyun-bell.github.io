@@ -1,7 +1,15 @@
 import { defineCollection, z } from 'astro:content';
 import { blogLoader } from '@/lib/content/loader';
 
-// 블로그 포스트 스키마
+const imageSchema = z.object({
+  url: z.string(),
+  alt: z.string(),
+  width: z.number(),
+  height: z.number(),
+  caption: z.string().optional(),
+  blurDataURL: z.string().optional(),
+});
+
 export const blogSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -15,9 +23,9 @@ export const blogSchema = z.object({
   author: z.string().optional(),
   content: z.string().optional(),
   readingTime: z.number().optional(),
+  images: z.array(imageSchema).optional(),
 });
 
-// 블로그 컬렉션 정의
 const blog = defineCollection({
   loader: blogLoader,
   schema: blogSchema,
@@ -27,5 +35,5 @@ export const collections = {
   blog,
 };
 
-// 타입 추출
 export type BlogPost = z.infer<typeof blogSchema>;
+export type ImageInfo = z.infer<typeof imageSchema>;

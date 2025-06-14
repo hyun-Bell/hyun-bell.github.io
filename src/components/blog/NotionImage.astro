@@ -1,0 +1,106 @@
+---
+import { Image } from 'astro:assets';
+
+export interface Props {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  caption?: string;
+  loading?: 'eager' | 'lazy';
+  blurDataURL?: string;
+}
+
+const { src, alt, width, height, caption, loading = 'lazy', blurDataURL } = Astro.props;
+
+// aspect ratio 계산
+const aspectRatio = `${width}/${height}`;
+---
+
+<figure class="notion-image-wrapper my-8">
+  <div
+    class="relative overflow-hidden rounded-lg bg-gray-100 shadow-lg dark:bg-gray-800"
+    style={`aspect-ratio: ${aspectRatio}`}
+    data-has-blur={blurDataURL ? 'true' : 'false'}
+  >
+    {/* Blur placeholder */}
+    {
+      blurDataURL && (
+        <img
+          src={blurDataURL}
+          alt=""
+          aria-hidden="true"
+          class="absolute inset-0 h-full w-full scale-110 opacity-100 blur-xl transition-opacity duration-300"
+          data-blur-placeholder="true"
+        />
+      )
+    }
+
+    {/* 실제 이미지 */}
+    <Image
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={loading}
+      decoding="async"
+      class="relative z-10 h-full w-full object-cover opacity-0 transition-opacity duration-300"
+      widths={[640, 768, 1024, 1280, 1536]}
+      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
+      format="webp"
+      quality={85}
+      onload="this.style.opacity='1'; if(this.previousElementSibling) this.previousElementSibling.style.opacity='0';"
+    />
+  </div>
+  {
+    caption && (
+      <figcaption class="mt-3 text-center text-sm text-gray-600 dark:text-gray-400">
+        {caption}
+      </figcaption>
+    )
+  }
+</figure>
+
+<style>
+  /* 이미지 로딩 애니메이션 */
+  .notion-image-wrapper img {
+    will-change: opacity;
+  }
+
+  /* blur placeholder 스타일 */
+  [data-blur-placeholder='true'] {
+    filter: blur(20px);
+    transform: scale(1.1);
+  }
+</style>
+
+<script>
+  // 이미지 로드 완료 처리
+  document.addEventListener('DOMContentLoaded', () => {
+    const images = document.querySelectorAll(
+      '.notion-image-wrapper img:not([data-blur-placeholder])',
+    );
+
+    images.forEach((img) => {
+      const htmlImg = img as HTMLImageElement;
+
+      if (htmlImg.complete) {
+        // 이미 로드된 경우
+        htmlImg.style.opacity = '1';
+        const blur = htmlImg.previousElementSibling as HTMLElement;
+        if (blur && blur.hasAttribute('data-blur-placeholder')) {
+          blur.style.opacity = '0';
+        }
+      } else {
+        // 로드 이벤트 리스너
+        htmlImg.addEventListener('load', () => {
+          htmlImg.style.opacity = '1';
+          const blur = htmlImg.previousElementSibling as HTMLElement;
+          if (blur && blur.hasAttribute('data-blur-placeholder')) {
+            blur.style.opacity = '0';
+          }
+        });
+      }
+    });
+  });
+</script>
