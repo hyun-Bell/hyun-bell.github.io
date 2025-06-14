@@ -16,7 +16,7 @@ const BATCH_SIZE = 5; // 동시에 처리할 포스트 수
 export const blogLoader: Loader = {
   name: 'notion-blog-loader',
 
-  load: async function ({ store, logger, parseData, generateDigest }) {
+  load: async function ({ store, logger, parseData, generateDigest, renderMarkdown }) {
     const client = getNotionClient();
     const startTime = Date.now();
 
@@ -93,11 +93,18 @@ export const blogLoader: Loader = {
                 data: postData,
               });
 
+              // Astro 5.9의 renderMarkdown 사용하여 마크다운 렌더링
+              let rendered = undefined;
+              if (fullPost.content) {
+                rendered = await renderMarkdown(fullPost.content);
+              }
+
               // store에 저장 - Astro가 자동으로 캐싱 관리
               const wasUpdated = store.set({
                 id: fullPost.slug,
                 data,
                 digest,
+                rendered,
               });
 
               return {
