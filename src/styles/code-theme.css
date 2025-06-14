@@ -1,0 +1,41 @@
+/* Shiki 코드 블록 스타일 보정 */
+
+/* 코드 블록 기본 스타일 개선 */
+pre {
+  @apply my-6 overflow-x-auto rounded-lg p-6;
+  @apply border border-gray-800;
+}
+
+/* 인라인 코드는 별도 스타일 유지 */
+:not(pre) > code {
+  @apply rounded bg-gray-800 px-1.5 py-0.5 font-mono text-sm text-pink-400;
+}
+
+/* 다크 모드 대응 */
+.dark pre {
+  @apply border-gray-700;
+}
+
+/* 라이트 모드 대응 */
+@media (prefers-color-scheme: light) {
+  html:not(.dark) pre {
+    @apply border-gray-200;
+  }
+
+  html:not(.dark) :not(pre) > code {
+    @apply bg-gray-100 text-pink-600;
+  }
+}
+
+/* 스크롤바 스타일 */
+pre::-webkit-scrollbar {
+  @apply h-2;
+}
+
+pre::-webkit-scrollbar-track {
+  @apply rounded bg-gray-800;
+}
+
+pre::-webkit-scrollbar-thumb {
+  @apply rounded bg-gray-600 hover:bg-gray-500;
+}

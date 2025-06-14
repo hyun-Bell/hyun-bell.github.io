@@ -6,6 +6,7 @@ import ReadingProgress from '@/components/blog/ReadingProgress.astro';
 import { formatDate } from '@/lib/utils/strings';
 import { enhanceHtmlWithImageMetadata } from '@/lib/utils/image-rendering';
 import '@/styles/blog-content.css';
+import '@/styles/code-theme.css';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -28,8 +29,8 @@ const headings = (renderedContent?.metadata?.headings || []) as Array<{
 
 const baseHtmlContent = renderedContent?.html || '';
 const { enhancedHtml: htmlContent, processedImageCount } = enhanceHtmlWithImageMetadata(
-  baseHtmlContent, 
-  data.images
+  baseHtmlContent,
+  data.images,
 );
 
 if (import.meta.env.DEV) {
@@ -118,7 +119,7 @@ if (import.meta.env.DEV) {
     background-color: #f5f5f5;
     border-radius: 8px;
   }
-  
+
   .image-with-blur img {
     display: block;
     width: 100%;
@@ -128,11 +129,11 @@ if (import.meta.env.DEV) {
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
   }
-  
+
   .image-with-blur[data-loaded] img {
     opacity: 1;
   }
-  
+
   /* 블러 이미지 스타일 */
   .image-with-blur .blur-placeholder {
     position: absolute;
@@ -145,7 +146,7 @@ if (import.meta.env.DEV) {
     transition: opacity 0.3s ease-in-out;
     z-index: 1;
   }
-  
+
   .image-with-blur[data-loaded] .blur-placeholder {
     opacity: 0;
   }
@@ -153,7 +154,7 @@ if (import.meta.env.DEV) {
 
 <script>
   import { createImageLoadingManager } from '@/lib/utils/client-image-loader';
-  
+
   document.addEventListener('DOMContentLoaded', () => {
     const imageManager = createImageLoadingManager();
     imageManager.initializeProgressiveImageLoading();

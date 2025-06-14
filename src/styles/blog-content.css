@@ -72,20 +72,7 @@
   @apply rounded px-1.5 py-0.5;
   @apply font-mono text-[0.875em];
   @apply border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800;
-  @apply text-pink-600 dark:text-pink-400;
-  font-weight: 500;
-}
-
-.blog-content pre {
-  @apply my-6 overflow-x-auto rounded-lg;
-  @apply border border-gray-200 dark:border-gray-800;
-}
-
-.blog-content pre code {
-  @apply text-sm;
-  background: none !important;
-  border: none !important;
-  padding: 0 !important;
+  @apply font-medium text-pink-600 dark:text-pink-400;
 }
 
 /* 이미지 컨테이너 */
@@ -102,11 +89,13 @@
   height: auto;
   min-height: 200px; /* 기본 최소 높이 */
   background-color: #f8f9fa;
-  transition: background-color 0.3s ease-in-out, min-height 0.2s ease-in-out;
+  transition:
+    background-color 0.3s ease-in-out,
+    min-height 0.2s ease-in-out;
 }
 
 /* 이미지가 로드되면 min-height를 제거하여 원본 비율 유지 */
-.blog-content figure.blog-figure img[data-loaded="true"] {
+.blog-content figure.blog-figure img[data-loaded='true'] {
   min-height: unset;
   background-color: transparent;
 }
@@ -133,7 +122,7 @@
 }
 
 /* 이미지 로드 후 블러 제거 */
-.blog-content figure.blog-figure img[data-loaded="true"][data-blur-placeholder] {
+.blog-content figure.blog-figure img[data-loaded='true'][data-blur-placeholder] {
   background-image: none;
 }
 

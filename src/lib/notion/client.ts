@@ -217,7 +217,6 @@ export class NotionClient {
     }
   }
 
-
   /**
    * 블로그 포스트 변환
    */
@@ -286,7 +285,6 @@ export class NotionClient {
 
         return `\`\`\`${language}\n${code}\n\`\`\``;
       } catch (error) {
-        console.error('Code block transform error:', error);
         return '';
       }
     });
