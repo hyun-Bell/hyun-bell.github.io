@@ -41,7 +41,7 @@ const pageNumbers = getPageNumbers();
 <nav class="flex items-center justify-center gap-2 font-mono text-sm" aria-label="페이지네이션">
   {/* 이전 페이지 */}
   <a
-    href={currentPage === 1 ? '#' : currentPage === 2 ? '/blog' : `${basePath}/${currentPage - 1}`}
+    href={currentPage === 1 ? '#' : currentPage === 2 ? basePath : `${basePath}/${currentPage - 1}`}
     class={`px-3 py-1 ${
       currentPage === 1
         ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
@@ -61,7 +61,7 @@ const pageNumbers = getPageNumbers();
           <span class="px-2 text-gray-500 dark:text-gray-500">...</span>
         ) : (
           <a
-            href={number === 1 ? '/blog' : `${basePath}/${number}`}
+            href={number === 1 ? basePath : `${basePath}/${number}`}
             class={`px-3 py-1 ${
               currentPage === number
                 ? 'text-primary-600 dark:text-primary-400'

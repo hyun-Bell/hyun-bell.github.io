@@ -37,3 +37,8 @@ pnpm-debug.log*
 
 # Notion update tracking
 .notion-last-update.json
+
+# claude
+CLAUDE.md
+.claude
+
