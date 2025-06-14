@@ -95,9 +95,46 @@
 }
 
 .blog-content figure.blog-figure img {
-  @apply h-auto w-full;
+  @apply w-full;
   @apply block;
   @apply shadow-lg;
+  /* 중요: height를 auto로 하되, 초기에는 min-height 설정으로 레이아웃 시프트 방지 */
+  height: auto;
+  min-height: 200px; /* 기본 최소 높이 */
+  background-color: #f8f9fa;
+  transition: background-color 0.3s ease-in-out, min-height 0.2s ease-in-out;
+}
+
+/* 이미지가 로드되면 min-height를 제거하여 원본 비율 유지 */
+.blog-content figure.blog-figure img[data-loaded="true"] {
+  min-height: unset;
+  background-color: transparent;
+}
+
+/* width와 height 속성이 있는 이미지는 정확한 aspect-ratio 사용 */
+.blog-content figure.blog-figure img[width][height] {
+  aspect-ratio: attr(width number) / attr(height number);
+  min-height: unset; /* 정확한 비율이 있으면 min-height 불필요 */
+}
+
+/* CSS attr()를 지원하지 않는 브라우저용 fallback */
+@supports not (aspect-ratio: attr(width number) / attr(height number)) {
+  .blog-content figure.blog-figure img[width][height] {
+    /* JavaScript에서 동적으로 설정될 aspect-ratio를 사용 */
+    min-height: unset;
+  }
+}
+
+/* 블러 플레이스홀더가 있는 이미지 */
+.blog-content figure.blog-figure img[data-blur-placeholder] {
+  background-image: var(--blur-placeholder);
+  background-size: cover;
+  background-position: center;
+}
+
+/* 이미지 로드 후 블러 제거 */
+.blog-content figure.blog-figure img[data-loaded="true"][data-blur-placeholder] {
+  background-image: none;
 }
 
 .blog-content figure.blog-figure figcaption {
