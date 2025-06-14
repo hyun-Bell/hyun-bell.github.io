@@ -20,3 +20,7 @@ export const SITE_CONSTANTS = {
 } as const;
 
 export type NavItem = (typeof SITE_CONSTANTS.NAV_ITEMS)[number];
+
+// Analytics 상수
+export const UMAMI_WEBSITE_ID = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID || '';
+export const UMAMI_SRC = import.meta.env.PUBLIC_UMAMI_SRC || '';

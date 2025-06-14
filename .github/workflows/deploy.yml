@@ -85,6 +85,8 @@ jobs:
           PUBLIC_AUTHOR_NAME: ${{ vars.PUBLIC_AUTHOR_NAME }}
           PUBLIC_AUTHOR_EMAIL: ${{ vars.PUBLIC_AUTHOR_EMAIL }}
           PUBLIC_GITHUB_URL: ${{ vars.PUBLIC_GITHUB_URL }}
+          PUBLIC_UMAMI_WEBSITE_ID: ${{ vars.PUBLIC_UMAMI_WEBSITE_ID }}
+          PUBLIC_UMAMI_SRC: ${{ vars.PUBLIC_UMAMI_SRC }}
         run: |
           echo "🏗️ Building site..."
           pnpm build

@@ -1,0 +1,26 @@
+---
+import { UMAMI_WEBSITE_ID, UMAMI_SRC } from '@/lib/constants';
+
+interface Props {
+  websiteId?: string;
+  src?: string;
+}
+
+const { websiteId = UMAMI_WEBSITE_ID, src = UMAMI_SRC } = Astro.props;
+
+// 개발 환경에서는 스크립트를 로드하지 않음
+const isDev = import.meta.env.DEV;
+const shouldLoadScript = !isDev && websiteId && src;
+---
+
+{
+  shouldLoadScript && (
+    <script
+      is:inline
+      defer
+      src={src}
+      data-website-id={websiteId}
+      data-domains="hyunbell.github.io"
+    />
+  )
+}

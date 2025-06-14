@@ -4,6 +4,7 @@ import ThemeScript from '../components/common/ThemeScript.astro';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import SEO from '../components/common/SEO.astro';
+import Analytics from '../components/common/Analytics.astro';
 import { SITE_CONFIG } from '@/lib/constants/site';
 
 export interface Props {
@@ -33,6 +34,7 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
     <ThemeScript />
 
     <SEO title={pageTitle} description={description} image={image} type={type} />
+    <Analytics />
 
     <link rel="preconnect" href="https://www.notion.so" />
     <link rel="preconnect" href="https://img.notionusercontent.com" crossorigin />
