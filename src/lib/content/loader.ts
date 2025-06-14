@@ -3,20 +3,23 @@
  */
 
 import { getNotionClient } from '@/lib/notion/client';
-import { logError } from '@/lib/utils/errors';
-import type { Loader } from 'astro/loaders';
+import { logError, retry } from '@/lib/utils/errors';
+// Astro 5.x Content Collection Loader 타입 정의
 import { z } from 'astro:content';
 
-const BATCH_SIZE = 5; // 동시에 처리할 포스트 수
+const BATCH_SIZE = 3; // 동시에 처리할 포스트 수 (Rate limiting 고려)
+const BATCH_DELAY = 500; // 배치 간 지연 시간 (ms)
 
 /**
  * 블로그 포스트 로더
  * Digest 기반 증분 업데이트로 변경된 콘텐츠만 가져옴
  */
-export const blogLoader: Loader = {
+// Astro 5.x Loader 인터페이스 (타입 추론 사용)
+export const blogLoader = {
   name: 'notion-blog-loader',
 
-  load: async function ({ store, logger, parseData, generateDigest, renderMarkdown }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  load: async function ({ store, logger, parseData, generateDigest, renderMarkdown }: any) {
     const client = getNotionClient();
     const startTime = Date.now();
 
@@ -55,9 +58,13 @@ export const blogLoader: Loader = {
             processedIds.add(summary.slug);
 
             // 콘텐츠 식별을 위한 digest 생성
+            // 분 단위로 시간을 잘라서 미세한 시간 변화로 인한 불필요한 업데이트 방지
+            const normalizedTime = new Date(summary.lastModified);
+            normalizedTime.setSeconds(0, 0); // 초와 밀리초를 0으로 설정
+
             const digest = generateDigest({
-              lastModified: summary.lastModified,
-              title: summary.title,
+              lastModified: normalizedTime.toISOString(),
+              title: summary.title.trim(), // 공백 정규화
             });
 
             // 기존 엔트리와 비교
@@ -68,9 +75,27 @@ export const blogLoader: Loader = {
               return { type: 'skipped' as const, summary };
             }
 
+            // 개발 환경에서 digest 변경 사유 로깅
+            if (import.meta.env.DEV && existingEntry) {
+              logger.info(`🔄 Content changed for "${summary.title}"`);
+              logger.info(`   Previous digest: ${existingEntry.digest}`);
+              logger.info(`   Current digest:  ${digest}`);
+              logger.info(`   Normalized time: ${normalizedTime.toISOString()}`);
+            }
+
             // 변경된 포스트의 전체 콘텐츠 가져오기
             try {
-              const fullPost = await client.getFullPost(summary.id);
+              // Rate limiting 에러 처리를 위한 retry 로직
+              const fullPost = await retry(() => client.getFullPost(summary.id), {
+                maxAttempts: 3,
+                delay: 1000,
+                backoff: true,
+                onRetry: (error, attempt) => {
+                  if (error.message.includes('429') || error.message.includes('rate')) {
+                    logger.warn(`🚦 Rate limited for ${summary.title}, retrying (${attempt}/3)`);
+                  }
+                },
+              });
 
               // Astro의 parseData를 위한 타입 변환
               const postData: Record<string, unknown> = {
@@ -143,9 +168,9 @@ export const blogLoader: Loader = {
         const batchTime = ((Date.now() - batchStartTime) / 1000).toFixed(2);
         logger.info(`⏱️  Batch ${batchIndex + 1} completed in ${batchTime}s`);
 
-        // 다음 배치 전 짧은 지연 (Rate limiting 방지)
+        // 다음 배치 전 지연 (Rate limiting 방지)
         if (batchIndex < batches.length - 1) {
-          await delay(100);
+          await delay(BATCH_DELAY);
         }
       }
 
@@ -179,7 +204,7 @@ export const blogLoader: Loader = {
       logger.info(`  📈 Avg per post: ${(parseFloat(stats.duration) / stats.total).toFixed(3)}s`);
 
       if (import.meta.env.DEV) {
-        console.log('Sync metadata:', {
+        logger.info('Sync metadata:', {
           lastSync: new Date().toISOString(),
           stats,
         });
