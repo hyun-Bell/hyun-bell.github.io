@@ -4,6 +4,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import TableOfContents from '@/components/blog/TableOfContents.astro';
 import ReadingProgress from '@/components/blog/ReadingProgress.astro';
 import { formatDate } from '@/lib/utils/strings';
+import { enhanceHtmlWithImageMetadata } from '@/lib/utils/image-rendering';
 import '@/styles/blog-content.css';
 
 export async function getStaticPaths() {
@@ -18,7 +19,6 @@ export async function getStaticPaths() {
 const { post } = Astro.props as { post: CollectionEntry<'blog'> };
 const { data } = post;
 
-// Astro 5.9의 rendered 속성 사용
 const renderedContent = post.rendered;
 const headings = (renderedContent?.metadata?.headings || []) as Array<{
   depth: number;
@@ -26,8 +26,15 @@ const headings = (renderedContent?.metadata?.headings || []) as Array<{
   slug: string;
 }>;
 
-// rendered.html을 사용
-const htmlContent = renderedContent?.html || '';
+const baseHtmlContent = renderedContent?.html || '';
+const { enhancedHtml: htmlContent, processedImageCount } = enhanceHtmlWithImageMetadata(
+  baseHtmlContent, 
+  data.images
+);
+
+if (import.meta.env.DEV) {
+  console.log(`[Astro Page] Enhanced ${processedImageCount} images with metadata`);
+}
 ---
 
 <BaseLayout title={data.title} description={data.description} type="article">
@@ -102,3 +109,53 @@ const htmlContent = renderedContent?.html || '';
     </div>
   </div>
 </BaseLayout>
+
+<style>
+  /* Blur placeholder 스타일 */
+  .image-with-blur {
+    position: relative;
+    overflow: hidden;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+  }
+  
+  .image-with-blur img {
+    display: block;
+    width: 100%;
+    height: auto;
+    position: relative;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  .image-with-blur[data-loaded] img {
+    opacity: 1;
+  }
+  
+  /* 블러 이미지 스타일 */
+  .image-with-blur .blur-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    filter: blur(20px);
+    transform: scale(1.1);
+    transition: opacity 0.3s ease-in-out;
+    z-index: 1;
+  }
+  
+  .image-with-blur[data-loaded] .blur-placeholder {
+    opacity: 0;
+  }
+</style>
+
+<script>
+  import { createImageLoadingManager } from '@/lib/utils/client-image-loader';
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    const imageManager = createImageLoadingManager();
+    imageManager.initializeProgressiveImageLoading();
+  });
+</script>
