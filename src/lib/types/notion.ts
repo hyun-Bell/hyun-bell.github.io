@@ -12,11 +12,12 @@ export interface NotionPage {
 
 export interface ImageInfo {
   url: string;
-  alt: string;
+  alt?: string;
   width: number;
   height: number;
-  caption: string;
-  blurDataURL: string;
+  caption?: string;
+  blurDataURL?: string;
+  blockId?: string;
 }
 
 // 블로그 포스트 속성
