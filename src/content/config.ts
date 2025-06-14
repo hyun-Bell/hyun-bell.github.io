@@ -27,7 +27,8 @@ export const blogSchema = z.object({
 });
 
 const blog = defineCollection({
-  loader: blogLoader,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  loader: blogLoader as any,
   schema: blogSchema,
 });
 

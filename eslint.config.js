@@ -54,6 +54,7 @@ export default [
         location: 'readonly',
         history: 'readonly',
         HTMLElement: 'readonly',
+        HTMLImageElement: 'readonly',
         HTMLButtonElement: 'readonly',
         Element: 'readonly',
         Event: 'readonly',
@@ -63,6 +64,11 @@ export default [
         requestAnimationFrame: 'readonly',
         cancelAnimationFrame: 'readonly',
         URL: 'readonly',
+
+        // Modern Web APIs
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
+        AbortController: 'readonly',
       },
     },
   },
@@ -83,7 +89,7 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['warn', 'error', 'log'] }],
       'prefer-const': 'error',
       'no-unused-vars': 'off',
     },

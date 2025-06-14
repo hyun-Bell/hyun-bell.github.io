@@ -1,6 +1,7 @@
 /**
  * Notion 이미지 URL 유틸리티
  */
+/// <reference lib="dom" />
 
 import { promises as fsPromises } from 'node:fs';
 import * as path from 'node:path';
@@ -69,18 +70,15 @@ async function downloadImage(url: string): Promise<Buffer> {
  * 이미지에서 blur placeholder 생성
  */
 async function generateBlurPlaceholder(buffer: Buffer): Promise<string> {
-  console.log('[generateBlurPlaceholder] Starting blur generation...');
-  
   // 작은 크기로 리사이즈하고 blur 적용
   const blurred = await sharp(buffer)
     .resize(10, 10, { fit: 'inside' })
     .blur()
     .jpeg({ quality: 50 })
     .toBuffer();
-  
+
   const blurDataURL = `data:image/jpeg;base64,${blurred.toString('base64')}`;
-  console.log('[generateBlurPlaceholder] Generated blur placeholder:', blurDataURL.substring(0, 50) + '...');
-  
+
   return blurDataURL;
 }
 
@@ -88,69 +86,54 @@ async function generateBlurPlaceholder(buffer: Buffer): Promise<string> {
  * 이미지 처리 및 메타데이터 추출
  */
 export async function processNotionImage(url: string, blockId: string): Promise<ProcessedImage> {
-  console.log('[processNotionImage] Processing image:', url);
-  console.log('[processNotionImage] Block ID:', blockId);
-  
   // 영구 URL로 변환
   const permanentUrl = convertToPublicNotionImage(url, blockId);
-  console.log('[processNotionImage] Permanent URL:', permanentUrl);
-  
+
   // 캐시 디렉토리 확인
   await ensureCacheDir();
-  
+
   // 캐시 키 생성
   const cacheKey = crypto.createHash('md5').update(permanentUrl).digest('hex');
-  console.log('[processNotionImage] Cache key:', cacheKey);
-  
+
   // 캐시 확인
   await loadMetadataCache();
   if (metadataCache[cacheKey]) {
-    console.log('[processNotionImage] Found in cache:', cacheKey);
     return {
       url: permanentUrl,
-      metadata: metadataCache[cacheKey]
+      metadata: metadataCache[cacheKey],
     };
   }
-  console.log('[processNotionImage] Not in cache, processing...');
-  
+
   try {
     // 이미지 다운로드
     const buffer = await downloadImage(url);
-    
+
     // Sharp로 메타데이터 추출
     const image = sharp(buffer);
     const metadata = await image.metadata();
-    
+
     if (!metadata.width || !metadata.height) {
       throw new Error('Unable to extract image dimensions');
     }
-    
+
     // blur placeholder 생성
     const blurDataURL = await generateBlurPlaceholder(buffer);
-    
+
     // 메타데이터 저장
     const imageMetadata: ImageMetadata = {
       width: metadata.width,
       height: metadata.height,
       blurDataURL,
-      format: metadata.format || 'jpeg'
+      format: metadata.format || 'jpeg',
     };
-    
-    console.log('[processNotionImage] Generated metadata:', {
-      width: imageMetadata.width,
-      height: imageMetadata.height,
-      blurDataURLLength: imageMetadata.blurDataURL.length,
-      format: imageMetadata.format
-    });
-    
+
     // 캐시에 저장
     metadataCache[cacheKey] = imageMetadata;
     await saveMetadataCache();
-    console.log('[processNotionImage] Saved to cache');
-    
+
     return {
       url: permanentUrl,
-      metadata: imageMetadata
+      metadata: imageMetadata,
     };
   } catch (error) {
     console.error(`Failed to process image ${url}:`, error);
@@ -160,9 +143,10 @@ export async function processNotionImage(url: string, blockId: string): Promise<
       metadata: {
         width: 800,
         height: 600,
-        blurDataURL: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAKAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==',
-        format: 'jpeg'
-      }
+        blurDataURL:
+          'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAKAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q==',
+        format: 'jpeg',
+      },
     };
   }
 }
@@ -234,19 +218,17 @@ export interface ExtractedImage {
 export function extractImagesFromMarkdown(markdown: string): ExtractedImage[] {
   const images: ExtractedImage[] = [];
   const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-  
+
   let match;
   while ((match = imageRegex.exec(markdown)) !== null) {
     const extracted = {
       url: match[2] || '',
       alt: match[1] || '',
-      originalUrl: match[2] || ''
+      originalUrl: match[2] || '',
     };
     images.push(extracted);
-    console.log('[extractImagesFromMarkdown] Found image:', extracted);
   }
-  
-  console.log(`[extractImagesFromMarkdown] Total images found: ${images.length}`);
+
   return images;
 }
 
@@ -256,16 +238,16 @@ export function extractImagesFromMarkdown(markdown: string): ExtractedImage[] {
 export function extractImagesFromHTML(html: string): ExtractedImage[] {
   const images: ExtractedImage[] = [];
   const imgRegex = /<img[^>]+src="([^"]+)"[^>]*(?:alt="([^"]*)")?[^>]*>/g;
-  
+
   let match;
   while ((match = imgRegex.exec(html)) !== null) {
     images.push({
       url: match[1] || '',
       alt: match[2] || '',
-      originalUrl: match[1] || ''
+      originalUrl: match[1] || '',
     });
   }
-  
+
   return images;
 }
 
@@ -278,7 +260,7 @@ export function extractBlockIdFromUrl(url: string): string {
   if (idMatch && idMatch[1]) {
     return idMatch[1];
   }
-  
+
   // 기본값으로 URL의 해시를 사용
   return crypto.createHash('md5').update(url).digest('hex').substring(0, 36);
 }

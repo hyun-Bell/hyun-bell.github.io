@@ -1,17 +1,60 @@
 import { getNotionClient } from '@/lib/notion/client';
 import { logError, retry } from '@/lib/utils/errors';
-import { z } from 'astro:content';
 import type { ImageInfo } from '@/lib/types/notion';
 import { extractMultipleImageDimensions } from '@/lib/image/dimensions';
+import type { BlogPost } from '@/lib/types/notion';
+import type { NotionClient, PostSummary } from '@/lib/notion/client';
+// Astro v5 Content Loader API 타입 정의
+interface DataEntry {
+  id: string;
+  data: unknown;
+  filePath?: string;
+  body?: string;
+  digest?: string;
+  rendered?: unknown;
+}
+
+interface DataStore {
+  set: (entry: DataEntry) => boolean;
+  get: (id: string) => DataEntry | undefined;
+  keys: () => Iterable<string>;
+  delete: (id: string) => boolean;
+  has: (id: string) => boolean;
+  entries: () => Iterable<[string, DataEntry]>;
+}
+
+interface LoaderContext {
+  collection: string;
+  store: DataStore;
+  meta: Map<string, unknown>;
+  logger: {
+    info: (message: string) => void;
+    warn: (message: string) => void;
+    error: (message: string) => void;
+  };
+  parseData: (data: { id: string; data: unknown }) => unknown;
+  generateDigest: (data: Record<string, unknown>) => string;
+  renderMarkdown: (content: string) => unknown;
+}
+
+interface Loader {
+  name: string;
+  load: (context: LoaderContext) => Promise<void>;
+}
 
 const CONCURRENT_POST_PROCESSING_LIMIT = 3;
 const RATE_LIMITING_DELAY_MS = 500;
 
-export const blogLoader = {
+export const blogLoader: Loader = {
   name: 'notion-blog-loader',
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  load: async function ({ store, logger, parseData, generateDigest, renderMarkdown }: any) {
+  load: async function ({
+    store,
+    logger,
+    parseData,
+    generateDigest,
+    renderMarkdown,
+  }: LoaderContext): Promise<void> {
     const client = getNotionClient();
     const startTime = Date.now();
 
@@ -24,8 +67,13 @@ export const blogLoader = {
       const syncStats = createSyncStatsTracker();
       const processedPostIds = new Set<string>();
 
-      const postBatches = createConcurrentBatches(publishedPostSummaries, CONCURRENT_POST_PROCESSING_LIMIT);
-      logger.info(`🔄 Processing ${postBatches.length} batches (${CONCURRENT_POST_PROCESSING_LIMIT} posts per batch)`);
+      const postBatches = createConcurrentBatches(
+        publishedPostSummaries,
+        CONCURRENT_POST_PROCESSING_LIMIT,
+      );
+      logger.info(
+        `🔄 Processing ${postBatches.length} batches (${CONCURRENT_POST_PROCESSING_LIMIT} posts per batch)`,
+      );
 
       for (let batchIndex = 0; batchIndex < postBatches.length; batchIndex++) {
         const currentBatch = postBatches[batchIndex];
@@ -36,7 +84,9 @@ export const blogLoader = {
         }
 
         const batchStartTime = Date.now();
-        logger.info(`📦 Processing batch ${batchIndex + 1}/${postBatches.length} (${currentBatch.length} posts)`);
+        logger.info(
+          `📦 Processing batch ${batchIndex + 1}/${postBatches.length} (${currentBatch.length} posts)`,
+        );
 
         const batchResults = await Promise.allSettled(
           currentBatch.map(async (postSummary) => {
@@ -47,18 +97,25 @@ export const blogLoader = {
 
             if (hasContentChanged(existingEntry, contentDigest)) {
               logContentChangeInDev(logger, postSummary, existingEntry, contentDigest);
-              return await processChangedPost(postSummary, contentDigest, client, store, parseData, renderMarkdown, logger);
+              return await processChangedPost(
+                postSummary,
+                contentDigest,
+                client,
+                store,
+                parseData,
+                renderMarkdown,
+                logger,
+              );
             } else {
               return { type: 'skipped' as const, summary: postSummary };
             }
-
           }),
         );
 
         updateSyncStats(batchResults, syncStats, logger);
 
         logBatchCompletion(batchIndex, batchStartTime, logger);
-        
+
         const isNotLastBatch = batchIndex < postBatches.length - 1;
         if (isNotLastBatch) {
           await delay(RATE_LIMITING_DELAY_MS);
@@ -66,8 +123,13 @@ export const blogLoader = {
       }
 
       const deletedPostCount = removeDeletedPosts(store, processedPostIds, logger);
-      
-      const finalStats = finalizeSyncStats(syncStats, deletedPostCount, publishedPostSummaries.length, startTime);
+
+      const finalStats = finalizeSyncStats(
+        syncStats,
+        deletedPostCount,
+        publishedPostSummaries.length,
+        startTime,
+      );
       logSyncSummary(finalStats, logger);
     } catch (error) {
       logError(error, 'blogLoader');
@@ -75,32 +137,6 @@ export const blogLoader = {
       throw error;
     }
   },
-
-  schema: z.object({
-    id: z.string(),
-    title: z.string(),
-    description: z.string().optional(),
-    slug: z.string(),
-    published: z.boolean(),
-    publishDate: z.string().transform((str) => new Date(str)),
-    lastModified: z.string().transform((str) => new Date(str)),
-    tags: z.array(z.string()),
-    featured: z.boolean(),
-    author: z.string().optional(),
-    content: z.string().optional(),
-    readingTime: z.number().optional(),
-    images: z.array(z.object({
-      url: z.string(),
-      alt: z.string().optional(),
-      width: z.number(),
-      height: z.number(),
-      caption: z.string().optional(),
-      blurDataURL: z.string().optional(),
-      blockId: z.string().optional(),
-      dominantColor: z.string().optional(),
-      aspectRatio: z.number().optional(),
-    })).optional(),
-  }),
 };
 
 function createConcurrentBatches<T>(items: T[], batchSize: number): T[][] {
@@ -111,15 +147,14 @@ function createConcurrentBatches<T>(items: T[], batchSize: number): T[][] {
   return batches;
 }
 
-
 async function extractAndProcessImages(htmlContent: string): Promise<ImageInfo[]> {
   const imageMatches = extractImageUrlsFromHtml(htmlContent);
-  
+
   if (imageMatches.length === 0) return [];
-  
-  const imageUrls = imageMatches.map(match => match.url);
+
+  const imageUrls = imageMatches.map((match) => match.url);
   const imageDimensionsMap = await extractMultipleImageDimensions(imageUrls, 3);
-  
+
   return createImageInfoList(imageMatches, imageDimensionsMap);
 }
 
@@ -127,25 +162,25 @@ function extractImageUrlsFromHtml(htmlContent: string): Array<{ url: string; alt
   const imageRegex = /<img[^>]+src="([^"]+)"[^>]*(?:alt="([^"]*)")?[^>]*>/g;
   const imageMatches: Array<{ url: string; alt: string }> = [];
   let regexMatch;
-  
+
   while ((regexMatch = imageRegex.exec(htmlContent)) !== null) {
     const imageUrl = regexMatch[1] || '';
     const altText = regexMatch[2] || '';
     imageMatches.push({ url: imageUrl, alt: altText });
   }
-  
+
   return imageMatches;
 }
 
 function createImageInfoList(
-  imageMatches: Array<{ url: string; alt: string }>, 
-  dimensionsMap: Map<string, { width: number; height: number }>
+  imageMatches: Array<{ url: string; alt: string }>,
+  dimensionsMap: Map<string, { width: number; height: number }>,
 ): ImageInfo[] {
   const DEFAULT_DIMENSIONS = { width: 1200, height: 900 };
-  
+
   return imageMatches.map(({ url, alt }) => {
     const imageDimensions = dimensionsMap.get(url) || DEFAULT_DIMENSIONS;
-    
+
     return {
       url,
       alt,
@@ -160,28 +195,32 @@ function createImageInfoList(
 function createMinimalPlaceholder(imageWidth: number, imageHeight: number): string {
   const BACKGROUND_COLOR = '#f8f9fa';
   const PLACEHOLDER_COLOR = '#e9ecef';
-  
+
   const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${imageWidth}" height="${imageHeight}" viewBox="0 0 ${imageWidth} ${imageHeight}">
     <rect width="100%" height="100%" fill="${BACKGROUND_COLOR}"/>
     <rect x="30%" y="45%" width="40%" height="10%" fill="${PLACEHOLDER_COLOR}" rx="2"/>
   </svg>`;
-  
+
   return `data:image/svg+xml,${encodeURIComponent(placeholderSvg)}`;
 }
 
 function delay(milliseconds: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, milliseconds));
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function createSyncStatsTracker() {
+function createSyncStatsTracker(): SyncStats {
   return {
     updatedCount: 0,
+    unchangedCount: 0,
     skippedCount: 0,
-    errorCount: 0
+    errorCount: 0,
   };
 }
 
-function generateContentDigest(postSummary: any, generateDigest: any) {
+function generateContentDigest(
+  postSummary: PostSummary,
+  generateDigest: (data: Record<string, unknown>) => string,
+) {
   const normalizedModificationTime = new Date(postSummary.lastModified);
   normalizedModificationTime.setSeconds(0, 0);
 
@@ -191,11 +230,19 @@ function generateContentDigest(postSummary: any, generateDigest: any) {
   });
 }
 
-function hasContentChanged(existingEntry: any, newDigest: string): boolean {
+function hasContentChanged(
+  existingEntry: { digest?: string } | undefined,
+  newDigest: string,
+): boolean {
   return !existingEntry || existingEntry.digest !== newDigest;
 }
 
-function logContentChangeInDev(logger: any, postSummary: any, existingEntry: any, newDigest: string): void {
+function logContentChangeInDev(
+  logger: LoaderContext['logger'],
+  postSummary: PostSummary,
+  existingEntry: { digest?: string } | undefined,
+  newDigest: string,
+): void {
   if (import.meta.env.DEV && existingEntry) {
     logger.info(`🔄 Content changed for "${postSummary.title}"`);
     logger.info(`   Previous digest: ${existingEntry.digest}`);
@@ -204,13 +251,13 @@ function logContentChangeInDev(logger: any, postSummary: any, existingEntry: any
 }
 
 async function processChangedPost(
-  postSummary: any, 
-  contentDigest: string, 
-  client: any, 
-  store: any, 
-  parseData: any, 
-  renderMarkdown: any, 
-  logger: any
+  postSummary: PostSummary,
+  contentDigest: string,
+  client: NotionClient,
+  store: LoaderContext['store'],
+  parseData: LoaderContext['parseData'],
+  renderMarkdown: LoaderContext['renderMarkdown'],
+  logger: LoaderContext['logger'],
 ) {
   try {
     const fullPost = await retry(() => client.getFullPost(postSummary.id), {
@@ -224,7 +271,7 @@ async function processChangedPost(
       },
     });
 
-    const processedImages = fullPost.content 
+    const processedImages = fullPost.content
       ? await extractAndProcessImages(fullPost.content).catch(() => [])
       : [];
 
@@ -234,17 +281,17 @@ async function processChangedPost(
 
     const astroPostData = createAstroPostData(fullPost, processedImages);
     const parsedData = await parseData({ id: fullPost.slug, data: astroPostData });
-    const renderedContent = fullPost.content ? await renderMarkdown(fullPost.content) : undefined;
+    const _renderedContent = fullPost.content ? await renderMarkdown(fullPost.content) : undefined;
 
-    const wasUpdated = store.set({
+    store.set({
       id: fullPost.slug,
       data: parsedData,
       digest: contentDigest,
-      rendered: renderedContent,
+      rendered: _renderedContent,
     });
 
     return {
-      type: wasUpdated ? ('updated' as const) : ('unchanged' as const),
+      type: 'updated' as const,
       summary: postSummary,
     };
   } catch (error) {
@@ -253,15 +300,18 @@ async function processChangedPost(
   }
 }
 
-function createAstroPostData(fullPost: any, processedImages: ImageInfo[]): Record<string, unknown> {
+function createAstroPostData(
+  fullPost: BlogPost,
+  processedImages: ImageInfo[],
+): Record<string, unknown> {
   return {
     id: fullPost.id,
     title: fullPost.title,
     description: fullPost.description,
     slug: fullPost.slug,
     published: fullPost.published,
-    publishDate: fullPost.publishDate.toISOString(),
-    lastModified: fullPost.lastModified.toISOString(),
+    publishDate: fullPost.publishDate,
+    lastModified: fullPost.lastModified,
     tags: fullPost.tags,
     featured: fullPost.featured,
     author: fullPost.author,
@@ -271,13 +321,37 @@ function createAstroPostData(fullPost: any, processedImages: ImageInfo[]): Recor
   };
 }
 
-function updateSyncStats(batchResults: any[], syncStats: any, logger: any): void {
+interface SyncResult {
+  status: 'fulfilled' | 'rejected';
+  value?: {
+    type: 'updated' | 'unchanged' | 'error' | 'skipped';
+    summary: PostSummary;
+    error?: unknown;
+  };
+  reason?: unknown;
+}
+
+interface SyncStats {
+  updatedCount: number;
+  unchangedCount: number;
+  skippedCount: number;
+  errorCount: number;
+}
+
+function updateSyncStats(
+  batchResults: SyncResult[],
+  syncStats: SyncStats,
+  logger: LoaderContext['logger'],
+): void {
   batchResults.forEach((result) => {
-    if (result.status === 'fulfilled') {
+    if (result.status === 'fulfilled' && result.value) {
       switch (result.value.type) {
         case 'updated':
           syncStats.updatedCount++;
           logger.info(`✅ Updated: ${result.value.summary.title}`);
+          break;
+        case 'unchanged':
+          syncStats.unchangedCount++;
           break;
         case 'skipped':
           syncStats.skippedCount++;
@@ -294,12 +368,20 @@ function updateSyncStats(batchResults: any[], syncStats: any, logger: any): void
   });
 }
 
-function logBatchCompletion(batchIndex: number, batchStartTime: number, logger: any): void {
+function logBatchCompletion(
+  batchIndex: number,
+  batchStartTime: number,
+  logger: LoaderContext['logger'],
+): void {
   const batchDurationSeconds = ((Date.now() - batchStartTime) / 1000).toFixed(2);
   logger.info(`⏱️  Batch ${batchIndex + 1} completed in ${batchDurationSeconds}s`);
 }
 
-function removeDeletedPosts(store: any, processedPostIds: Set<string>, logger: any): number {
+function removeDeletedPosts(
+  store: LoaderContext['store'],
+  processedPostIds: Set<string>,
+  logger: LoaderContext['logger'],
+): number {
   let deletedCount = 0;
   for (const existingPostId of store.keys()) {
     if (!processedPostIds.has(existingPostId)) {
@@ -311,9 +393,14 @@ function removeDeletedPosts(store: any, processedPostIds: Set<string>, logger: a
   return deletedCount;
 }
 
-function finalizeSyncStats(syncStats: any, deletedCount: number, totalPosts: number, startTime: number) {
+function finalizeSyncStats(
+  syncStats: SyncStats,
+  deletedCount: number,
+  totalPosts: number,
+  startTime: number,
+) {
   const totalDurationSeconds = ((Date.now() - startTime) / 1000).toFixed(2);
-  
+
   return {
     total: totalPosts,
     updated: syncStats.updatedCount,
@@ -324,7 +411,10 @@ function finalizeSyncStats(syncStats: any, deletedCount: number, totalPosts: num
   };
 }
 
-function logSyncSummary(stats: any, logger: any): void {
+function logSyncSummary(
+  stats: ReturnType<typeof finalizeSyncStats>,
+  logger: LoaderContext['logger'],
+): void {
   logger.info('📊 Sync Summary:');
   logger.info(`  ✅ Updated: ${stats.updated}`);
   logger.info(`  ⏭️  Skipped: ${stats.skipped}`);
@@ -334,9 +424,8 @@ function logSyncSummary(stats: any, logger: any): void {
   logger.info(`  📈 Avg per post: ${(parseFloat(stats.duration) / stats.total).toFixed(3)}s`);
 
   if (import.meta.env.DEV) {
-    logger.info('Sync metadata:', {
-      lastSync: new Date().toISOString(),
-      stats,
-    });
+    logger.info('Sync metadata:');
+    logger.info(`  Last sync: ${new Date().toISOString()}`);
+    logger.info(`  Processed posts: ${stats.total}`);
   }
 }
