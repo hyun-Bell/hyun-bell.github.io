@@ -1,17 +1,84 @@
 ---
-// 테마 초기화 스크립트 - FOUC 방지 전용
-// 최소한의 동기 코드만 실행
+
 ---
 
 <script is:inline>
-  // 즉시 실행으로 FOUC 방지
-  {
-    const theme =
-      localStorage.getItem('theme') ||
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  (() => {
+    const STORAGE_KEY = 'theme';
+    const DARK_CLASS = 'dark';
+    const THEMES = { LIGHT: 'light', DARK: 'dark' };
+    const THEME_COLORS = { LIGHT: '#ffffff', DARK: '#0f172a' };
 
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    }
-  }
+    const getStoredTheme = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        return Object.values(THEMES).includes(stored) ? stored : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const getSystemTheme = () =>
+      window.matchMedia('(prefers-color-scheme: dark)').matches ? THEMES.DARK : THEMES.LIGHT;
+
+    const getPreferredTheme = () => getStoredTheme() || getSystemTheme();
+
+    const updateDocumentTheme = (theme) => {
+      const root = document.documentElement;
+      const isDark = theme === THEMES.DARK;
+
+      root.classList.toggle(DARK_CLASS, isDark);
+      root.style.colorScheme = theme;
+
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        metaTheme.content = isDark ? THEME_COLORS.DARK : THEME_COLORS.LIGHT;
+      }
+    };
+
+    const persistTheme = (theme) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, theme);
+      } catch {}
+    };
+
+    const getCurrentTheme = () =>
+      document.documentElement.classList.contains(DARK_CLASS) ? THEMES.DARK : THEMES.LIGHT;
+
+    const toggleTheme = () => {
+      const currentTheme = getCurrentTheme();
+      const newTheme = currentTheme === THEMES.DARK ? THEMES.LIGHT : THEMES.DARK;
+
+      updateDocumentTheme(newTheme);
+      persistTheme(newTheme);
+
+      window.dispatchEvent(
+        new CustomEvent('theme-changed', {
+          detail: { theme: newTheme },
+        }),
+      );
+    };
+
+    const handleSystemThemeChange = (e) => {
+      if (!getStoredTheme()) {
+        updateDocumentTheme(e.matches ? THEMES.DARK : THEMES.LIGHT);
+      }
+    };
+
+    const handleCrossTabSync = (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        updateDocumentTheme(e.newValue);
+      }
+    };
+
+    updateDocumentTheme(getPreferredTheme());
+
+    window.toggleTheme = toggleTheme;
+
+    window
+      .matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', handleSystemThemeChange);
+
+    window.addEventListener('storage', handleCrossTabSync);
+  })();
 </script>

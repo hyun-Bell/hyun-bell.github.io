@@ -1,30 +1,41 @@
-/* Shiki 코드 블록 스타일 보정 */
-
-/* 코드 블록 기본 스타일 개선 */
 pre {
-  @apply my-6 overflow-x-auto rounded-lg p-6;
-  @apply border border-gray-800;
+  @apply my-6 overflow-x-auto rounded-lg border p-6;
 }
 
-/* 인라인 코드는 별도 스타일 유지 */
+html:not(.dark) pre {
+  @apply border-gray-200 bg-gray-50;
+}
+
+html.dark pre {
+  @apply border-gray-800 bg-gray-900;
+}
+
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light) !important;
+  background-color: var(--shiki-light-bg) !important;
+}
+
+html.dark .astro-code,
+html.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+
+pre.astro-code {
+  background-color: transparent !important;
+}
+
 :not(pre) > code {
-  @apply rounded bg-gray-800 px-1.5 py-0.5 font-mono text-sm text-pink-400;
+  @apply rounded px-1.5 py-0.5 font-mono text-sm;
 }
 
-/* 다크 모드 대응 */
-.dark pre {
-  @apply border-gray-700;
+html:not(.dark) :not(pre) > code {
+  @apply bg-gray-100 text-pink-600;
 }
 
-/* 라이트 모드 대응 */
-@media (prefers-color-scheme: light) {
-  html:not(.dark) pre {
-    @apply border-gray-200;
-  }
-
-  html:not(.dark) :not(pre) > code {
-    @apply bg-gray-100 text-pink-600;
-  }
+html.dark :not(pre) > code {
+  @apply bg-gray-800 text-pink-400;
 }
 
 /* 스크롤바 스타일 */

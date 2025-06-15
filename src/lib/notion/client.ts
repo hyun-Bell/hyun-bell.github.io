@@ -283,7 +283,6 @@ export class NotionClient {
    * 커스텀 변환 규칙 설정
    */
   private setupCustomTransformers(): void {
-    // 코드 블록 변환 개선
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.n2m.setCustomTransformer('code', async (block: any) => {
       try {
@@ -352,7 +351,7 @@ export class NotionClient {
     });
   }
 
-  // Property 헬퍼 함수들 - 더 유연한 속성 접근
+  // Property 헬퍼 함수들
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getTitle(props: any): string | null {
     // 다양한 제목 속성 이름 시도

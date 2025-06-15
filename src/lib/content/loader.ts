@@ -335,13 +335,34 @@ function hasContentChanged(
 function logContentChangeInDev(
   logger: LoaderContext['logger'],
   postSummary: PostSummary,
-  existingEntry: { digest?: string } | undefined,
+  existingEntry: { digest?: string; data?: BlogPostData } | undefined,
   newDigest: string,
 ): void {
-  if (import.meta.env.DEV && existingEntry) {
+  if (import.meta.env.DEV && existingEntry?.digest) {
     logger.info(`🔄 Content changed for "${postSummary.title}"`);
     logger.info(`   Previous digest: ${existingEntry.digest}`);
     logger.info(`   Current digest:  ${newDigest}`);
+
+    // digest 생성에 사용되는 필드들 비교
+    const newDate = new Date(postSummary.lastModified).toISOString().split('T')[0];
+    const newTitle = postSummary.title.trim();
+    const newPublished = postSummary.published ?? false;
+
+    if (existingEntry.data) {
+      const oldDate = new Date(existingEntry.data.lastModified).toISOString().split('T')[0];
+      const oldTitle = existingEntry.data.title.trim();
+      const oldPublished = existingEntry.data.published;
+
+      const changes: string[] = [];
+      if (oldDate !== newDate) changes.push(`date: ${oldDate} → ${newDate}`);
+      if (oldTitle !== newTitle) changes.push(`title: "${oldTitle}" → "${newTitle}"`);
+      if (oldPublished !== newPublished)
+        changes.push(`published: ${oldPublished} → ${newPublished}`);
+
+      if (changes.length > 0) {
+        logger.info(`   Changed fields: ${changes.join(', ')}`);
+      }
+    }
   }
 }
 

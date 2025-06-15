@@ -125,6 +125,7 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
         font-weight: 700;
       }
     </style>
+    <meta name="theme-color" content="#ffffff" />
   </head>
   <body>
     <div
@@ -137,13 +138,5 @@ const pageTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFI
       <Footer />
     </div>
     <CopyCodeScript />
-
-    <script>
-      import { theme } from '@/lib/theme';
-      theme.init();
-      window.addEventListener('DOMContentLoaded', () => {
-        theme.reinit();
-      });
-    </script>
   </body>
 </html>
