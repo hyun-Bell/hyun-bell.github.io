@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 export default defineConfig({
   site: 'https://hyun-bell.github.io',
   base: '/',
-
+  prefetch: true,
   integrations: [
     tailwind({
       applyBaseStyles: false,
