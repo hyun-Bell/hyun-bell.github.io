@@ -5,9 +5,9 @@
 export const SITE_CONFIG = {
   url: import.meta.env.PUBLIC_SITE_URL || 'https://hyunBell.github.io',
   title: import.meta.env.PUBLIC_SITE_TITLE || 'hyunBell.dev',
-  description: import.meta.env.PUBLIC_SITE_DESCRIPTION || '백엔드 개발자의 성장 기록',
+  description: import.meta.env.PUBLIC_SITE_DESCRIPTION || '개발자의 성장 기록',
   author: {
-    name: import.meta.env.PUBLIC_AUTHOR_NAME || '노현종 (hyunBell)',
+    name: import.meta.env.PUBLIC_AUTHOR_NAME || 'hyunBell',
     email: import.meta.env.PUBLIC_AUTHOR_EMAIL || '',
     github: import.meta.env.PUBLIC_GITHUB_URL || 'https://github.com/hyunBell',
   },
