@@ -21,6 +21,7 @@ import { SITE_CONFIG, NAV_ITEMS } from '@/lib/constants/site';
           NAV_ITEMS.map((item) => (
             <a
               href={item.href}
+              data-astro-prefetch="load"
               class="nav-link font-mono text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
               data-nav-item={item.href}
             >
