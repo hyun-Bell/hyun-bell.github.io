@@ -31,21 +31,23 @@ const imageProps = {
 ---
 
 <figure class="blog-figure">
-  {blurDataURL ? (
-    <div class="image-wrapper" data-blur-placeholder>
-      <img
-        src={blurDataURL}
-        alt=""
-        aria-hidden="true"
-        class="blur-placeholder"
-        width={width}
-        height={height}
-      />
+  {
+    blurDataURL ? (
+      <div class="image-wrapper" data-blur-placeholder>
+        <img
+          src={blurDataURL}
+          alt=""
+          aria-hidden="true"
+          class="blur-placeholder"
+          width={width}
+          height={height}
+        />
+        <Image {...imageProps} />
+      </div>
+    ) : (
       <Image {...imageProps} />
-    </div>
-  ) : (
-    <Image {...imageProps} />
-  )}
+    )
+  }
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
 
@@ -79,11 +81,11 @@ const imageProps = {
     transition: opacity 0.3s ease-in-out;
   }
 
-  .image-wrapper img:not(.blur-placeholder)[data-loaded="true"] {
+  .image-wrapper img:not(.blur-placeholder)[data-loaded='true'] {
     opacity: 1;
   }
 
-  .image-wrapper img:not(.blur-placeholder)[data-loaded="true"] ~ .blur-placeholder {
+  .image-wrapper img:not(.blur-placeholder)[data-loaded='true'] ~ .blur-placeholder {
     opacity: 0;
   }
 
@@ -106,7 +108,7 @@ const imageProps = {
   // 이미지 로드 완료 시 blur placeholder 제거
   document.addEventListener('DOMContentLoaded', () => {
     const images = document.querySelectorAll('.image-wrapper img:not(.blur-placeholder)');
-    
+
     images.forEach((img) => {
       if (img instanceof HTMLImageElement && img.complete) {
         img.setAttribute('data-loaded', 'true');

@@ -4,10 +4,39 @@ import type { ImageInfo } from '@/lib/types/notion';
 import { extractMultipleImageDimensions } from '@/lib/image/dimensions';
 import type { BlogPost } from '@/lib/types/notion';
 import type { NotionClient, PostSummary } from '@/lib/notion/client';
-// Astro v5 Content Loader API 타입 정의
-interface DataEntry {
+
+// 설정 상수
+const CONFIG = {
+  BATCH_SIZE: 5,
+  RATE_LIMIT_DELAY: 500,
+  MAX_RETRIES: 3,
+  RETRY_BASE_DELAY: 1000,
+  DEFAULT_IMAGE_DIMENSIONS: { width: 1200, height: 900 },
+  MEMORY_WARNING_THRESHOLD: 1000,
+  IMAGE_PROCESSING_CONCURRENCY: 3,
+} as const;
+
+// BlogPost 데이터 타입 정의 (Astro Content Collections용)
+interface BlogPostData {
   id: string;
-  data: unknown;
+  title: string;
+  description: string;
+  slug: string;
+  published: boolean;
+  publishDate: string;
+  lastModified: string;
+  tags: string[];
+  featured: boolean;
+  author: string;
+  content: string;
+  readingTime: number;
+  images: ImageInfo[];
+}
+
+// Astro v5 Content Loader API 타입 정의
+interface DataEntry<T = BlogPostData> {
+  id: string;
+  data: T;
   filePath?: string;
   body?: string;
   digest?: string;
@@ -42,9 +71,6 @@ interface Loader {
   load: (context: LoaderContext) => Promise<void>;
 }
 
-const CONCURRENT_POST_PROCESSING_LIMIT = 3;
-const RATE_LIMITING_DELAY_MS = 500;
-
 export const blogLoader: Loader = {
   name: 'notion-blog-loader',
 
@@ -67,12 +93,14 @@ export const blogLoader: Loader = {
       const syncStats = createSyncStatsTracker();
       const processedPostIds = new Set<string>();
 
-      const postBatches = createConcurrentBatches(
-        publishedPostSummaries,
-        CONCURRENT_POST_PROCESSING_LIMIT,
-      );
+      const postBatches = createConcurrentBatches(publishedPostSummaries, CONFIG.BATCH_SIZE);
+
+      // 메모리 사용량 모니터링
+      if (publishedPostSummaries.length > CONFIG.MEMORY_WARNING_THRESHOLD) {
+        logger.warn(`⚠️ Large batch detected: ${publishedPostSummaries.length} posts`);
+      }
       logger.info(
-        `🔄 Processing ${postBatches.length} batches (${CONCURRENT_POST_PROCESSING_LIMIT} posts per batch)`,
+        `🔄 Processing ${postBatches.length} batches (${CONFIG.BATCH_SIZE} posts per batch)`,
       );
 
       for (let batchIndex = 0; batchIndex < postBatches.length; batchIndex++) {
@@ -118,7 +146,7 @@ export const blogLoader: Loader = {
 
         const isNotLastBatch = batchIndex < postBatches.length - 1;
         if (isNotLastBatch) {
-          await delay(RATE_LIMITING_DELAY_MS);
+          await delay(CONFIG.RATE_LIMIT_DELAY);
         }
       }
 
@@ -152,10 +180,69 @@ async function extractAndProcessImages(htmlContent: string): Promise<ImageInfo[]
 
   if (imageMatches.length === 0) return [];
 
-  const imageUrls = imageMatches.map((match) => match.url);
-  const imageDimensionsMap = await extractMultipleImageDimensions(imageUrls, 3);
+  // 배치 처리로 에러 격리와 진행 상황 추적
+  return await processImagesInBatches(imageMatches);
+}
 
-  return createImageInfoList(imageMatches, imageDimensionsMap);
+/**
+ * 실제로는 스트리밍이 아닌 배치 처리입니다.
+ * 메모리 효율성 개선보다는 에러 격리와 진행률 표시가 주 목적입니다.
+ */
+async function processImagesInBatches(
+  imageMatches: Array<{ url: string; alt: string }>,
+): Promise<ImageInfo[]> {
+  // 적은 수의 이미지는 단순 처리가 더 효율적
+  if (imageMatches.length <= CONFIG.IMAGE_PROCESSING_CONCURRENCY) {
+    return processImageBatch(imageMatches);
+  }
+
+  const processedImages: ImageInfo[] = [];
+  const totalImages = imageMatches.length;
+
+  // 배치 단위로 이미지 처리 - 에러 격리와 진행률 표시
+  for (let i = 0; i < totalImages; i += CONFIG.IMAGE_PROCESSING_CONCURRENCY) {
+    const batch = imageMatches.slice(i, i + CONFIG.IMAGE_PROCESSING_CONCURRENCY);
+    const batchResults = await processImageBatch(batch);
+    processedImages.push(...batchResults);
+
+    // 진행률 로깅 (개발 환경에서만)
+    if (import.meta.env.DEV && totalImages > CONFIG.IMAGE_PROCESSING_CONCURRENCY) {
+      const progress = Math.min(i + CONFIG.IMAGE_PROCESSING_CONCURRENCY, totalImages);
+      console.log(`🖼️  Image batch processed: ${progress}/${totalImages}`);
+    }
+
+    // API 부하 분산을 위한 짧은 지연
+    if (i + CONFIG.IMAGE_PROCESSING_CONCURRENCY < totalImages) {
+      await delay(100);
+    }
+  }
+
+  return processedImages;
+}
+
+async function processImageBatch(
+  imageMatches: Array<{ url: string; alt: string }>,
+): Promise<ImageInfo[]> {
+  const batchUrls = imageMatches.map((match) => match.url);
+
+  try {
+    const dimensionsMap = await extractMultipleImageDimensions(
+      batchUrls,
+      CONFIG.IMAGE_PROCESSING_CONCURRENCY,
+    );
+    return createImageInfoList(imageMatches, dimensionsMap);
+  } catch (error) {
+    return imageMatches.map(({ url, alt }) => ({
+      url,
+      alt,
+      ...CONFIG.DEFAULT_IMAGE_DIMENSIONS,
+      caption: alt,
+      blurDataURL: createMinimalPlaceholder(
+        CONFIG.DEFAULT_IMAGE_DIMENSIONS.width,
+        CONFIG.DEFAULT_IMAGE_DIMENSIONS.height,
+      ),
+    }));
+  }
 }
 
 function extractImageUrlsFromHtml(htmlContent: string): Array<{ url: string; alt: string }> {
@@ -176,10 +263,8 @@ function createImageInfoList(
   imageMatches: Array<{ url: string; alt: string }>,
   dimensionsMap: Map<string, { width: number; height: number }>,
 ): ImageInfo[] {
-  const DEFAULT_DIMENSIONS = { width: 1200, height: 900 };
-
   return imageMatches.map(({ url, alt }) => {
-    const imageDimensions = dimensionsMap.get(url) || DEFAULT_DIMENSIONS;
+    const imageDimensions = dimensionsMap.get(url) || CONFIG.DEFAULT_IMAGE_DIMENSIONS;
 
     return {
       url,
@@ -221,12 +306,22 @@ function generateContentDigest(
   postSummary: PostSummary,
   generateDigest: (data: Record<string, unknown>) => string,
 ) {
-  const normalizedModificationTime = new Date(postSummary.lastModified);
-  normalizedModificationTime.setSeconds(0, 0);
+  /**
+   * Notion의 `last_edited_time` 는 페이지 내 공식(Formula)이나 Roll-up 속성이
+   * 재계산될 때도 함께 갱신되는 특성이 있다. 그 결과 실제 콘텐츠가 변하지
+   * 않았는데도 매 분(또는 더 자주) 타임스탬프가 변해 digest 가 달라지고,
+   * 모든 글을 다시 fetch 하는 불필요한 빌드가 발생한다.
+   *
+   * 1. 날짜(YYYY-MM-DD) 단위로만 비교하여 불필요한 무효화를 줄인다.
+   * 2. 발행 여부가 토글되면 즉시 반영되어야 하므로 `published` 값을 digest 에 포함한다.
+   * 3. 제목 변경은 실제 컨텐츠 변경과 동일하게 취급하므로 포함한다.
+   */
+  const modifiedDate = new Date(postSummary.lastModified).toISOString().split('T')[0]; // e.g. "2025-06-15"
 
   return generateDigest({
-    lastModified: normalizedModificationTime.toISOString(),
+    date: modifiedDate,
     title: postSummary.title.trim(),
+    published: postSummary.published ?? false,
   });
 }
 
@@ -260,63 +355,95 @@ async function processChangedPost(
   logger: LoaderContext['logger'],
 ) {
   try {
-    const fullPost = await retry(() => client.getFullPost(postSummary.id), {
-      maxAttempts: 3,
-      delay: 1000,
-      backoff: true,
-      onRetry: (error, attempt) => {
-        if (error.message.includes('429') || error.message.includes('rate')) {
-          logger.warn(`🚦 Rate limited for ${postSummary.title}, retrying (${attempt}/3)`);
-        }
-      },
-    });
+    const fullPost = await fetchPostWithRetry(postSummary, client, logger);
+    const processedImages = await processPostImages(fullPost, logger);
+    const astroData = createAstroPostData(fullPost, processedImages);
 
-    const processedImages = fullPost.content
-      ? await extractAndProcessImages(fullPost.content).catch(() => [])
-      : [];
-
-    if (processedImages.length > 0) {
-      logger.info(`Processed ${processedImages.length} images for "${postSummary.title}"`);
-    }
-
-    const astroPostData = createAstroPostData(fullPost, processedImages);
-    const parsedData = await parseData({ id: fullPost.slug, data: astroPostData });
-    const _renderedContent = fullPost.content ? await renderMarkdown(fullPost.content) : undefined;
-
-    store.set({
-      id: fullPost.slug,
-      data: parsedData,
-      digest: contentDigest,
-      rendered: _renderedContent,
-    });
-
-    return {
-      type: 'updated' as const,
-      summary: postSummary,
-    };
+    return await storeProcessedPost(astroData, contentDigest, store, parseData, renderMarkdown);
   } catch (error) {
     logError(error, `Failed to fetch post: ${postSummary.id}`);
     return { type: 'error' as const, summary: postSummary, error };
   }
 }
 
-function createAstroPostData(
+async function fetchPostWithRetry(
+  postSummary: PostSummary,
+  client: NotionClient,
+  logger: LoaderContext['logger'],
+): Promise<BlogPost> {
+  return await retry(() => client.getFullPost(postSummary.id), {
+    maxAttempts: CONFIG.MAX_RETRIES,
+    delay: CONFIG.RETRY_BASE_DELAY,
+    backoff: true,
+    onRetry: (error, attempt) => {
+      if (error.message.includes('429') || error.message.includes('rate')) {
+        logger.warn(
+          `🚦 Rate limited for ${postSummary.title}, retrying (${attempt}/${CONFIG.MAX_RETRIES})`,
+        );
+      }
+    },
+  });
+}
+
+async function processPostImages(
   fullPost: BlogPost,
-  processedImages: ImageInfo[],
-): Record<string, unknown> {
+  logger: LoaderContext['logger'],
+): Promise<ImageInfo[]> {
+  if (!fullPost.content) return [];
+
+  const startTime = Date.now();
+  const processedImages = await extractAndProcessImages(fullPost.content).catch((error) => {
+    logger.warn(`⚠️ Image processing failed for "${fullPost.title}": ${error.message}`);
+    return [];
+  });
+
+  if (processedImages.length > 0) {
+    const processingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+    logger.info(
+      `🖼️  Processed ${processedImages.length} images for "${fullPost.title}" in ${processingTime}s`,
+    );
+  }
+
+  return processedImages;
+}
+
+async function storeProcessedPost(
+  astroData: BlogPostData,
+  contentDigest: string,
+  store: LoaderContext['store'],
+  parseData: LoaderContext['parseData'],
+  renderMarkdown: LoaderContext['renderMarkdown'],
+) {
+  const parsedData = (await parseData({ id: astroData.slug, data: astroData })) as BlogPostData;
+  const _renderedContent = astroData.content ? await renderMarkdown(astroData.content) : undefined;
+
+  store.set({
+    id: astroData.slug,
+    data: parsedData,
+    digest: contentDigest,
+    rendered: _renderedContent,
+  });
+
+  return {
+    type: 'updated' as const,
+    summary: { title: astroData.title } as PostSummary,
+  };
+}
+
+function createAstroPostData(fullPost: BlogPost, processedImages: ImageInfo[]): BlogPostData {
   return {
     id: fullPost.id,
     title: fullPost.title,
-    description: fullPost.description,
+    description: fullPost.description || '',
     slug: fullPost.slug,
     published: fullPost.published,
-    publishDate: fullPost.publishDate,
-    lastModified: fullPost.lastModified,
+    publishDate: fullPost.publishDate.toISOString(),
+    lastModified: fullPost.lastModified.toISOString(),
     tags: fullPost.tags,
     featured: fullPost.featured,
-    author: fullPost.author,
-    content: fullPost.content,
-    readingTime: fullPost.readingTime,
+    author: fullPost.author || '',
+    content: fullPost.content || '',
+    readingTime: fullPost.readingTime || 0,
     images: processedImages,
   };
 }

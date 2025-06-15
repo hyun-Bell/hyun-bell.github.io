@@ -85,11 +85,14 @@ export class NotionClient {
           const title = this.getTitle(page.properties) || 'Untitled';
           const slug = page.id.replace(/-/g, '');
 
+          // 우선순위: 사용자 정의 LastEditedDate → built-in last_edited_time
+          const lastModified = this.getEffectiveLastModified(page);
+
           summaries.push({
             id: page.id,
             slug,
             title,
-            lastModified: page.last_edited_time,
+            lastModified,
             published,
           });
         } catch (error) {
@@ -254,6 +257,12 @@ export class NotionClient {
     // Tags - 다양한 속성 이름 시도
     const tags = this.getMultiSelect(props.Tags) || this.getMultiSelect(props.태그) || [];
 
+    // LastEditedDate 처리 - getPostSummaries와 동일한 로직 사용
+    const explicitLastEdited =
+      this.getDate(props.LastEditedDate) || this.getDate(props['Last Edited']) || null;
+
+    const lastModifiedValue = explicitLastEdited || page.last_edited_time;
+
     return {
       id: page.id,
       title,
@@ -261,7 +270,7 @@ export class NotionClient {
       slug,
       published,
       publishDate,
-      lastModified: new Date(page.last_edited_time),
+      lastModified: new Date(lastModifiedValue),
       tags,
       featured,
       author: authorValue || 'Anonymous',
@@ -395,6 +404,23 @@ export class NotionClient {
       return multiSelectProp.multi_select?.map((item) => item.name) || [];
     }
     return [];
+  }
+
+  /**
+   * 효과적인 마지막 수정일 계산
+   * 우선순위: LastEditedDate → Last Edited → last_edited_time
+   */
+  private getEffectiveLastModified(page: PageObjectResponse): string {
+    const props = page.properties;
+
+    // 사용자 정의 날짜 필드 체크
+    const explicitLastEdited =
+      this.getDate(props.LastEditedDate) ||
+      this.getDate(props['Last Edited']) ||
+      this.getDate(props['마지막 수정']) || // 한글 속성명도 지원
+      null;
+
+    return explicitLastEdited || page.last_edited_time;
   }
 }
 
