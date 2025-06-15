@@ -4,11 +4,15 @@
 
 ## Skills
 
-- **Framework**: Astro 5.8
-- **Language**: TypeScript 5.8 (strict mode)
+- **Framework**: Astro 5
+- **Language**: TypeScript
 - **Styling**: Tailwind CSS 3.4
 - **CMS**: Notion API
 - **Deployment**: GitHub Pages
+
+
+<img width="1108" alt="image" src="https://github.com/user-attachments/assets/87da137e-4582-4f85-b024-9e891747bddd" />
+
 
 ## Astro 선택 이유
 
@@ -33,9 +37,6 @@ const posts = await getCollection('blog');
 
 페이지의 대부분은 정적 HTML이고, 필요한 부분만 인터랙티브하게 만들 수 있습니다.
 
-### 5. View Transitions
-
-SPA처럼 부드러운 페이지 전환을 제공하면서도 정적 사이트의 장점을 유지합니다.
 
 ## 프로젝트 구조
 
@@ -49,14 +50,6 @@ src/
 └── components/     # Astro 컴포넌트
 ```
 
-## 주요 기능
-
-- Notion 데이터베이스와 연동된 자동 포스트 생성
-- 다크모드 지원 (View Transitions 유지)
-- 읽기 시간 자동 계산
-- 태그 기반 분류
-- 페이지네이션
-
 ## 실행 방법
 
 ```bash
@@ -68,4 +61,11 @@ pnpm dev
 
 main 브랜치에 푸시하면 GitHub Actions가 자동으로 빌드하고 배포합니다.
 
----
+## 필요한 최소 env
+
+```bash
+# Notion API Configuration
+NOTION_TOKEN=
+NOTION_DATABASE_ID=
+NOTION_PAGES_DATABASE_ID=
+```
