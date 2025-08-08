@@ -235,6 +235,40 @@
   @apply bg-gray-400 dark:bg-gray-500;
 }
 
+/* YouTube 임베드 스타일 */
+.blog-content .youtube-embed-container {
+  @apply relative my-8 overflow-hidden rounded-lg;
+  padding-bottom: 56.25%; /* 16:9 비율 유지 */
+  height: 0;
+  width: 100%;
+  /* 배경색 제거 - iframe 로딩 중 블랙박스 방지 */
+  background: transparent;
+}
+
+.blog-content .youtube-embed-container iframe {
+  @apply absolute top-0 left-0;
+  @apply h-full w-full;
+  @apply border-0;
+  /* iframe 배경을 명시적으로 설정 */
+  background: #000;
+}
+
+/* YouTube 임베드 박스 그림자 - 깊이감 추가 */
+.blog-content .youtube-embed-container {
+  @apply shadow-lg;
+}
+
+/* YouTube 임베드 호버 효과 - 부드러운 전환 */
+@media (hover: hover) {
+  .blog-content .youtube-embed-container {
+    transition: box-shadow 0.2s ease;
+  }
+
+  .blog-content .youtube-embed-container:hover {
+    @apply shadow-xl;
+  }
+}
+
 /* 모바일 최적화 */
 @media (max-width: 640px) {
   .blog-content {
@@ -276,5 +310,11 @@
 
   .blog-content figure.blog-figure figcaption {
     @apply px-4;
+  }
+
+  /* 모바일에서 YouTube 임베드 전체 너비 */
+  .blog-content .youtube-embed-container {
+    @apply -mx-4 rounded-none shadow-none;
+    /* 모바일에서는 그림자 제거 */
   }
 }

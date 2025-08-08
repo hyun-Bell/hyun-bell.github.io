@@ -11,6 +11,12 @@ import { Client, isFullPage } from '@notionhq/client';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { NotionToMarkdown } from 'notion-to-md';
 import { convertMarkdownImages, convertToPublicNotionImage } from './image-utils';
+import {
+  isYouTubeUrl,
+  extractYouTubeVideoId,
+  generateYouTubeEmbed,
+  convertYouTubeLinksToEmbeds,
+} from './youtube-utils';
 
 export interface PostSummary {
   id: string;
@@ -214,6 +220,9 @@ export class NotionClient {
       // 남은 이미지 URL 변환 (인라인 이미지 등)
       content = convertMarkdownImages(content, pageId);
 
+      // Markdown 내 YouTube 링크를 임베드로 변환
+      content = convertYouTubeLinksToEmbeds(content);
+
       return content;
     } catch (error) {
       throw new NotionError(`Failed to fetch page content: ${pageId}`, 'FETCH_CONTENT_ERROR');
@@ -333,7 +342,7 @@ export class NotionClient {
       }
     });
 
-    // 북마크 블록 변환
+    // 북마크 블록 변환 (YouTube 지원 추가)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     this.n2m.setCustomTransformer('bookmark', async (block: any) => {
       try {
@@ -343,6 +352,15 @@ export class NotionClient {
         const caption =
           block.bookmark.caption?.map((text: NotionRichText) => text.plain_text).join('') || url;
 
+        // YouTube URL인 경우 임베드로 변환
+        if (isYouTubeUrl(url)) {
+          const videoInfo = extractYouTubeVideoId(url);
+          if (videoInfo) {
+            return generateYouTubeEmbed(videoInfo, { title: caption });
+          }
+        }
+
+        // 일반 북마크는 링크로 처리
         return `[${caption}](${url})`;
       } catch (error) {
         console.error('Bookmark transform error:', error);
