@@ -9,7 +9,7 @@ import { SITE_CONFIG, NAV_ITEMS } from '@/lib/constants/site';
     <div class="flex h-16 items-center justify-between">
       <!-- Logo -->
       <a href="/" class="flex items-center space-x-2 font-mono">
-        <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">_</span>
+        <span class="text-primary-600 dark:text-primary-400 text-2xl font-bold">_</span>
         <span class="text-lg font-semibold text-gray-900 dark:text-gray-100"
           >{SITE_CONFIG.title}</span
         >
@@ -21,7 +21,7 @@ import { SITE_CONFIG, NAV_ITEMS } from '@/lib/constants/site';
           NAV_ITEMS.map((item) => (
             <a
               href={item.href}
-              data-astro-prefetch="load"
+              data-astro-prefetch="hover"
               class="nav-link font-mono text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
               data-nav-item={item.href}
             >
@@ -53,6 +53,8 @@ import { SITE_CONFIG, NAV_ITEMS } from '@/lib/constants/site';
 </header>
 
 <style>
+  @reference "../../styles/tailwind.css";
+
   /* Active 상태 스타일 */
   .nav-link {
     position: relative;
@@ -71,19 +73,19 @@ import { SITE_CONFIG, NAV_ITEMS } from '@/lib/constants/site';
   }
 
   .sun-icon {
-    @apply rotate-0 scale-100 opacity-100;
+    @apply scale-100 rotate-0 opacity-100;
   }
 
   .moon-icon {
-    @apply rotate-90 scale-0 opacity-0;
+    @apply scale-0 rotate-90 opacity-0;
   }
 
   :global(.dark) .sun-icon {
-    @apply -rotate-90 scale-0 opacity-0;
+    @apply scale-0 -rotate-90 opacity-0;
   }
 
   :global(.dark) .moon-icon {
-    @apply rotate-0 scale-100 opacity-100;
+    @apply scale-100 rotate-0 opacity-100;
   }
 </style>
 

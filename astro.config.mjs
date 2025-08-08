@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
+import tailwindcss from '@tailwindcss/vite';
 import remarkGfm from 'remark-gfm';
 
 // https://astro.build/config
@@ -8,12 +8,7 @@ export default defineConfig({
   site: 'https://hyun-bell.github.io',
   base: '/',
   prefetch: true,
-  integrations: [
-    tailwind({
-      applyBaseStyles: false,
-    }),
-    sitemap(),
-  ],
+  integrations: [sitemap()],
 
   output: 'static',
 
@@ -33,12 +28,14 @@ export default defineConfig({
         dark: 'github-dark',
       },
       defaultColor: false,
+      cssVariablePrefix: '--shiki-',
       wrap: true,
       langs: ['javascript', 'typescript', 'json', 'html', 'css', 'bash', 'python', 'astro'],
     },
   },
 
   vite: {
+    plugins: [tailwindcss()],
     cacheDir: '.astro/vite',
     optimizeDeps: {
       include: ['@notionhq/client', 'notion-to-md'],

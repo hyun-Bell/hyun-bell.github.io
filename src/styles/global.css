@@ -1,31 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  /* 기본 설정 */
-  :root {
-    color-scheme: light;
-  }
-
-  :root.dark {
-    color-scheme: dark;
-  }
-
-  /* 부드러운 스크롤 */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-}
-
-/* prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-  }
-}
+@import './tailwind.css';
+@import './code-theme.css';
+@import './blog-content.css';

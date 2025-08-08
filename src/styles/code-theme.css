@@ -1,52 +1,173 @@
-pre {
-  @apply my-6 overflow-x-auto rounded-lg border p-6;
+@reference "../styles/tailwind.css";
+
+/* === Code Block Container === */
+pre.astro-code {
+  @apply overflow-x-auto;
+  /* Layout */
+  margin-top: 2rem !important;
+  margin-bottom: 2rem !important;
+  padding: 1rem !important;
+  position: relative !important;
+
+  /* Visual Design */
+  border-radius: 0.75rem !important;
+  border: 1px solid #e5e7eb !important;
+  background-color: #f8fafc !important;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+
+  /* Interaction */
+  transition: all 0.2s ease-in-out !important;
 }
 
-html:not(.dark) pre {
-  @apply border-gray-200 bg-gray-50;
+/* === Dark Mode === */
+html.dark pre.astro-code {
+  border-color: #4b5563 !important;
+  background-color: #1e293b !important;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.4),
+    0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
 }
 
-html.dark pre {
-  @apply border-gray-800 bg-gray-900;
+/* === Shiki Code Styling === */
+.astro-code {
+  /* Reset container styles */
+  background-color: transparent !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+
+  /* Typography */
+  font-family:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+
+  /* Layout */
+  overflow-x: visible !important;
+  white-space: pre !important;
+  word-wrap: normal !important;
 }
 
-.astro-code,
-.astro-code span {
+/* 라이트 모드에서 Shiki 변수들이 올바르게 적용되도록 */
+html:not(.dark) .astro-code span {
   color: var(--shiki-light) !important;
-  background-color: var(--shiki-light-bg) !important;
 }
 
-html.dark .astro-code,
+/* 다크 모드에서 Shiki 변수들이 올바르게 적용되도록 */
 html.dark .astro-code span {
   color: var(--shiki-dark) !important;
-  background-color: var(--shiki-dark-bg) !important;
 }
 
-pre.astro-code {
+/* === Inline Code Styling === */
+@layer utilities {
+  /* 인라인 코드 기본 스타일링 (블록 코드와 분리) */
+  :not(pre) > code {
+    @apply rounded-md px-2 py-1 font-mono text-sm;
+    text-decoration: none !important;
+    outline: none !important;
+    border: none !important;
+    font-weight: 500;
+  }
+
+  /* 라이트 모드 인라인 코드 */
+  html:not(.dark) :not(pre) > code {
+    @apply bg-gray-100 text-rose-600;
+    border: 1px solid #e5e7eb;
+  }
+
+  /* 다크 모드 인라인 코드 */
+  html.dark :not(pre) > code {
+    @apply bg-gray-800 text-rose-400;
+    border: 1px solid #4b5563;
+  }
+}
+
+/* 블록 코드 내부의 code 태그는 별도 스타일링 없음 */
+pre code {
   background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-size: inherit;
+  color: inherit;
+  font-weight: inherit;
 }
 
-:not(pre) > code {
-  @apply rounded px-1.5 py-0.5 font-mono text-sm;
+/* 코드 라인 스타일 */
+.astro-code .line {
+  display: inline-block;
+  width: 100%;
+  min-height: 1.6rem; /* 빈 줄도 높이 유지 */
 }
 
-html:not(.dark) :not(pre) > code {
-  @apply bg-gray-100 text-pink-600;
+/* 하단 빈 span 태그로 인한 불필요한 여백 제거 */
+.astro-code .line:empty,
+.astro-code span:empty:last-child {
+  display: none !important;
 }
 
-html.dark :not(pre) > code {
-  @apply bg-gray-800 text-pink-400;
+/* 코드 블록 마지막 줄의 불필요한 여백 제거 */
+.astro-code:last-child {
+  margin-bottom: 0 !important;
 }
 
 /* 스크롤바 스타일 */
 pre::-webkit-scrollbar {
-  @apply h-2;
+  height: 8px;
 }
 
 pre::-webkit-scrollbar-track {
-  @apply rounded bg-gray-800;
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+html.dark pre::-webkit-scrollbar-track {
+  background: #374151;
 }
 
 pre::-webkit-scrollbar-thumb {
-  @apply rounded bg-gray-600 hover:bg-gray-500;
+  background: #cbd5e1;
+  border-radius: 4px;
 }
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+html.dark pre::-webkit-scrollbar-thumb {
+  background: #6b7280;
+}
+
+html.dark pre::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* 복사 버튼을 위한 상대 위치 설정 */
+pre {
+  position: relative;
+}
+
+/* 코드 블록 호버 효과 */
+@media (hover: hover) {
+  pre.astro-code:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    transform: translateY(-1px);
+    transition: all 0.2s ease-in-out;
+  }
+
+  html.dark pre.astro-code:hover {
+    border-color: #4b5563 !important;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.5),
+      0 2px 4px -1px rgba(0, 0, 0, 0.4) !important;
+  }
+}
+
+/* 그라데이션 액센트 제거 - 깔끔한 border만 유지 */
