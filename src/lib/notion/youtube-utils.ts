@@ -54,16 +54,27 @@ export function extractYouTubeVideoId(url: string): YouTubeVideoInfo | null {
       }
       // youtube.com/embed/VIDEO_ID
       else if (pathname.startsWith('/embed/')) {
-        videoId = pathname.split('/embed/')[1].split('?')[0];
+        const after = pathname.split('/embed/')[1];
+        if (after) {
+          const idPart = after.split('?')[0] ?? null;
+          videoId = idPart || null;
+        }
       }
       // youtube.com/v/VIDEO_ID (legacy)
       else if (pathname.startsWith('/v/')) {
-        videoId = pathname.split('/v/')[1].split('?')[0];
+        const after = pathname.split('/v/')[1];
+        if (after) {
+          const idPart = after.split('?')[0] ?? null;
+          videoId = idPart || null;
+        }
       }
     }
     // youtu.be/VIDEO_ID
     else if (hostname === 'youtu.be') {
-      videoId = pathname.slice(1).split('?')[0];
+      const idStr = pathname.slice(1);
+      const qIndex = idStr.indexOf('?');
+      const cleanId = qIndex >= 0 ? idStr.slice(0, qIndex) : idStr;
+      videoId = cleanId || null;
       timestamp = searchParams.get('t');
       playlistId = searchParams.get('list');
     }
