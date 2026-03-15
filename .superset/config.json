@@ -1,0 +1,4 @@
+{
+  "setup": ["./scripts/worktree-setup.sh"],
+  "teardown": ["./scripts/worktree-teardown.sh"]
+}
